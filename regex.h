@@ -151,5 +151,5 @@ RegexMatch regex_simple_match(char *str, char *pattern) {
 }
 
 void regex_print_match(RegexMatch match) {
-    printf("%.*s", match.matchLength, match.match);
+    printf("%.*s", (int)match.matchLength, match.match);
 }
