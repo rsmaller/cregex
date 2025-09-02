@@ -3,9 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 
-//  Return Values
-
-
 //  Flag Macros
 #define REGEX_FLAG_BIT(x)             (((uint64_t)1)<<(x))
 
