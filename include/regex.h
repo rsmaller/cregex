@@ -106,6 +106,7 @@ int regex_match_single_char(char toMatch, char *sequence, uint64_t flags) {
     size_t seqLength = strlen(sequence);
     uint64_t seqType = regex_fetch_char_type(sequence, flags);
     int retIndex = 0;
+    
     if (regex_has_flag(&seqType, REGEX_ESCAPED_CHARACTER)) {
         while(*sequence == '\\' && *(sequence+1)) sequence++;
         if (toMatch == *sequence) return 1;
@@ -129,22 +130,18 @@ RegexMatch regex_simple_match(char *str, char *pattern) {
             matchStart++;
         }
         while (regex_match_single_char(matchStart[matchIndex], pattern, 0)) {
-            // printf("Current char and pattern: %c for %s(%p) [:%zu]\n", matchStart[matchIndex], pattern, pattern, matchIndex);
             matchIndex++;
             while(*pattern == '\\') pattern++;
             pattern++;
         }
         if (*pattern && ((pattern != patternStart + patternLen - 1 && *pattern != '\\') || (pattern != patternStart + patternLen - 2))) {
-            // printf("Pattern reset at '%c' || %p -> %p [:%zu]\n", *pattern, patternStart, pattern, matchIndex);
             pattern = patternStart;
             matchStart++;
             matchIndex = 0;
         } else {
-            // printf("Match index: %zu, %.*s\n", matchIndex, matchIndex, matchStart);
             return (RegexMatch){matchIndex, matchStart};
         }
     }
-    // printf("Match index: %zu, %.*s\n", matchIndex, matchIndex, matchStart);
 }
 
 void regex_print_match(RegexMatch match) {

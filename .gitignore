@@ -54,3 +54,14 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Other build files
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.dir
+/cmake_install.cmake
+/CMakeCache.txt
+/CMakeFiles
+/x64
+/Debug
