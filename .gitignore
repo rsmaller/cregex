@@ -60,8 +60,13 @@ dkms.conf
 *.vcxproj.filters
 *.sln
 *.dir
+*ninja*
 /cmake_install.cmake
+/cmake-build*
 /CMakeCache.txt
 /CMakeFiles
 /x64
 /Debug
+/Testing
+/.cmake
+/.idea

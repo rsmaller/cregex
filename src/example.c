@@ -2,21 +2,10 @@
 #include "regex.h"
 
 int main() {
-    char *mystr = "yes no maybe 6176534628";
-    char *mypattern = "\\d\\d\\d";
-    RegexMatch myMatch = regex_simple_match(mystr, mypattern);
-    printf("Match from \"%s\":\t\"", mypattern);
-    regex_print_match(myMatch);
-    printf("\"\n");
-    mypattern = "e\\s\\w";
-    myMatch = regex_simple_match(mystr, mypattern);
-    printf("Match from \"%s\":\t\"", mypattern);
-    regex_print_match(myMatch);
-    printf("\"\n");
-    mypattern = "s\\sn";
-    myMatch = regex_simple_match(mystr, mypattern);
-    printf("Match from \"%s\":\t\"", mypattern);
-    regex_print_match(myMatch);
-    printf("\"\n");
+    // char *mystr = "yes no maybe 6176534628";
+    char *mypattern = "be{1,2}\\*[a-zA-Z0-9]{1,3}";
+    printf("Pattern is \"%s\"\n", mypattern);
+    RegexPatternChar *pattern = regex_compile_pattern(mypattern);
+    print_regex_compiled_pattern(pattern);
     return 0;
 }

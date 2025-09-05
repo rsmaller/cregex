@@ -2,24 +2,54 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 //  Flag Macros
 #define REGEX_FLAG_BIT(x)             (((uint64_t)1)<<(x))
 
-#define REGEX_STATE_INSIDE_CHAR_CLASS REGEX_FLAG_BIT(0)
-#define REGEX_METACHARACTER           REGEX_FLAG_BIT(1)
-#define REGEX_ESCAPED_CHARACTER       REGEX_FLAG_BIT(2)
-#define REGEX_METACHARACTER_MODIFIER  REGEX_FLAG_BIT(3)
+#define REGEX_STATE_INSIDE_CHAR_CLASS               REGEX_FLAG_BIT(0)
+#define REGEX_STATE_ESCAPED_CHAR                    REGEX_FLAG_BIT(1)
+#define REGEX_STATE_INSIDE_MATCH_CONTAINER          REGEX_FLAG_BIT(2)
+
+#define REGEX_PATTERN_METACHARACTER                 REGEX_FLAG_BIT(0)
+#define REGEX_PATTERN_METACHARACTER_MODIFIER        REGEX_FLAG_BIT(1)
+#define REGEX_PATTERN_METACHARACTER_CLASS           REGEX_FLAG_BIT(2)
+#define REGEX_PATTERN_METACHARACTER_CLASS_RANGE     REGEX_FLAG_BIT(3)
+
+//  Other Macros
+#define REGEX_INF_COUNT SIZE_MAX
+
+typedef struct RegexPatternChar {
+    char primaryChar;
+    uint64_t flags;
+    size_t charClassLength;
+    size_t minCount;
+    size_t maxCount;
+    struct RegexPatternChar *charClassInternals;
+    struct RegexPatternChar *next;
+    char charClassRangeMin;
+    char charClassRangeMax;
+} RegexPatternChar;
 
 typedef struct RegexMatch {
     size_t matchLength;
     char *match;
 } RegexMatch;
 
-// typedef struct RegexContainer {
-//     size_t matches;
-//     RegexMatch matches[];
-// } RegexContainer;
+typedef struct RegexContainer {
+    size_t matchCount;
+    RegexMatch *matches;
+} RegexContainer;
+
+void regex_error(const char * const msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vfprintf(stderr, msg, args);
+    va_end(args);
+    exit(-1);
+}
 
 uint64_t regex_has_flag(uint64_t *toCheck, uint64_t flag) {
     return *toCheck & flag;
@@ -37,113 +67,199 @@ void regex_toggle_flag(uint64_t *toCheck, uint64_t flag) {
     *toCheck ^= flag;
 }
 
-int regex_special_char_match(char special, char toMatch) {
-    switch(special) {
-        case 'd':
-            if (toMatch >= '0' && toMatch <= '9') return 1;
-            return 0;
-        case 'w':
-            if ((toMatch >= 'A' && toMatch <= 'z') || (toMatch >= '0' && toMatch <= '9') || toMatch == '_') return 1;
-            return 0;
-        case 's':
-            if (toMatch == ' ' || toMatch == '\t' || toMatch == '\r' || toMatch == '\n' || toMatch == '\f' || toMatch == '\v') return 1;
-            return 0;
-        case 'D':
-            if (!(toMatch >= '0' && toMatch <= '9')) return 1;
-            return 0;
-        case 'W':
-            if (!((toMatch >= 'A' && toMatch <= 'z') || (toMatch >= '0' && toMatch <= '9') || toMatch == '_')) return 1;
-            return 0;
-        case 'S':
-            if (!(toMatch == ' ' || toMatch == '\t' || toMatch == '\r' || toMatch == '\n' || toMatch == '\f' || toMatch == '\v')) return 1;
-            return 0;        
+int regex_is_numeric(char toCheck) {
+    return toCheck >= '0' && toCheck <= '9';
+}
+
+uint64_t regex_get_nonescaped_char_type(char toCheck) {
+    switch (toCheck) {
         case '.':
-            if (toMatch != '\n') return 1;
-            return 0;
+            return REGEX_PATTERN_METACHARACTER;
+        case '*':
+            return REGEX_PATTERN_METACHARACTER;
+        case '$':
+            return REGEX_PATTERN_METACHARACTER;
+        case '^':
+            return REGEX_PATTERN_METACHARACTER;
+        case '[':
+            return REGEX_PATTERN_METACHARACTER;
+        case '{':
+            return REGEX_PATTERN_METACHARACTER;
+        case '(':
+            return REGEX_PATTERN_METACHARACTER;
+        case ']':
+            return REGEX_PATTERN_METACHARACTER;
+        case '}':
+            return REGEX_PATTERN_METACHARACTER;
+        case ')':
+            return REGEX_PATTERN_METACHARACTER;
+        case '|':
+            return REGEX_PATTERN_METACHARACTER;
         default:
             return 0;
     }
 }
 
-uint64_t regex_fetch_char_type(char *sequence, uint64_t stateFlags) {
-    int backslashFound = 0;
-    size_t length = strlen(sequence);
-    if (length < 2) return REGEX_ESCAPED_CHARACTER;
-    if (*sequence == '\\') {
-        backslashFound = 1;
-        while(*sequence == '\\' && *(sequence+1)) sequence++;
+uint64_t regex_get_char_class_char_type(char toCheck) {
+    switch (toCheck) {
+        case '^':
+            return REGEX_PATTERN_METACHARACTER;
+        case '\\':
+            return REGEX_PATTERN_METACHARACTER;
+        case '-':
+            return REGEX_PATTERN_METACHARACTER;
+        case ']':
+            return REGEX_PATTERN_METACHARACTER;
+        default:
+            return 0;
     }
-    char toTest = *sequence;
-    int ret = 0;
-    if (!regex_has_flag(&stateFlags, REGEX_STATE_INSIDE_CHAR_CLASS)) {
-        switch (toTest) {
-            case  0:   ret = 0;                       break;     case 'd': ret =  REGEX_METACHARACTER;     break;
-            case 's':  ret = REGEX_METACHARACTER;     break;     case 'w': ret =  REGEX_METACHARACTER;     break;
-            case 'D':  ret = REGEX_METACHARACTER;     break;     case 'S': ret =  REGEX_METACHARACTER;     break;
-            case 'W':  ret = REGEX_METACHARACTER;     break;     case '.': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case ':':  ret = REGEX_ESCAPED_CHARACTER; break;     case '^': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case '$':  ret = REGEX_ESCAPED_CHARACTER; break;     case '*': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case '+':  ret = REGEX_ESCAPED_CHARACTER; break;     case '?': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case '(':  ret = REGEX_ESCAPED_CHARACTER; break;     case ')': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case '[':  ret = REGEX_ESCAPED_CHARACTER; break;     case '|': ret =  REGEX_ESCAPED_CHARACTER; break;
-            case '{':  ret = REGEX_ESCAPED_CHARACTER; break;     case '\\': ret = REGEX_ESCAPED_CHARACTER; break;
-            default:   ret = 0;                       break;
+}
+
+void regex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
+    regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_METACHARACTER_CLASS);
+    size_t charClassLength = 0;
+    (*pattern)++;
+    patternToAdd -> charClassInternals = (RegexPatternChar *)malloc(sizeof(RegexPatternChar));
+    RegexPatternChar *currentClassChar = patternToAdd -> charClassInternals;
+    while (**pattern != ']') {
+        if (!**pattern) {
+            regex_error("Character class not properly terminated!");
         }
-    } else {
-        switch (toTest) {
-            case  0:   ret = 0;                       break;         case '^': ret = REGEX_ESCAPED_CHARACTER; break;
-            case '-':  ret = REGEX_ESCAPED_CHARACTER; break;         case ']': ret = REGEX_ESCAPED_CHARACTER; break;
-            case '\\': ret = REGEX_ESCAPED_CHARACTER; break;         default:  ret = 0;                       break;
+        charClassLength++;
+        uint64_t charType = regex_get_char_class_char_type(**pattern);
+        if (**pattern == '\\') {
+            (*pattern)++;
+            charType = regex_get_char_class_char_type(**pattern);
+            if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
+                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
+            } else if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
+                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
+            }
         }
+        currentClassChar -> flags = charType;
+        if (*(*pattern+1) == '-' && **pattern != '\\') {
+            regex_set_flag(&currentClassChar -> flags, REGEX_PATTERN_METACHARACTER_CLASS_RANGE);
+            currentClassChar -> primaryChar = *(*pattern+1);
+            currentClassChar -> charClassRangeMin = **pattern;
+            currentClassChar -> charClassRangeMax = *(*pattern+2);
+            *pattern += 2;
+            if (currentClassChar -> charClassRangeMin >= currentClassChar -> charClassRangeMax) {
+                regex_error("Character %c is out of range of character %c in character class", currentClassChar -> charClassRangeMin, currentClassChar -> charClassRangeMax);
+            }
+        } else {
+            currentClassChar -> primaryChar = **pattern;
+        }
+        currentClassChar -> charClassLength = 0;
+        currentClassChar -> charClassInternals = NULL;
+        currentClassChar -> minCount = 1;
+        currentClassChar -> maxCount = 1;
+        if (*(*pattern+1) != ']') {
+            currentClassChar -> next = (RegexPatternChar *)malloc(sizeof(RegexPatternChar));
+            currentClassChar = currentClassChar -> next;
+        } else {
+            currentClassChar -> next = NULL;
+        }
+        (*pattern)++;
     }
-    if (!backslashFound && ret == REGEX_ESCAPED_CHARACTER)  ret = REGEX_METACHARACTER;
-    else if (!backslashFound && ret == REGEX_METACHARACTER) ret = REGEX_ESCAPED_CHARACTER; // Swap the result if a backslash has not been found.
+    patternToAdd -> charClassLength = charClassLength;
+}
+
+RegexPatternChar regex_fetch_current_char_incr(char **str) {
+    RegexPatternChar ret = {0};
+    uint64_t state = 0;
+    if (**str == '\\') {
+        regex_set_flag(&state, REGEX_STATE_ESCAPED_CHAR);
+        (*str)++;
+    }
+    if (**str == '[' && !regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
+        regex_set_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS);
+    }
+    uint64_t charType = regex_get_nonescaped_char_type(**str);
+    if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
+        regex_set_flag(&charType, REGEX_PATTERN_METACHARACTER);
+    } else if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
+        regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
+    }
+    ret.flags = charType;
+    ret.charClassLength = 0;
+    ret.charClassInternals = NULL;
+    ret.next = NULL;
+    ret.primaryChar = **str;
+    ret.minCount = 1;
+    ret.maxCount = 1;
+    if (regex_has_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS)) {
+        regex_compile_char_class(&ret, str);
+    }
+    (*str)++;
+    if (**str == '?') {
+        ret.minCount = 0;
+        ret.maxCount = 1;
+        (*str)++;
+    } else if (**str == '*') {
+        ret.minCount = 0;
+        ret.maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (**str == '+') {
+        ret.minCount = 1;
+        ret.maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (**str == '{') {
+        (*str)++;
+        char *terminator;
+        ret.minCount = strtoull((*str)++, &terminator, 10);
+        *str = terminator;
+        while (**str == ' ' || **str == ',') {
+            (*str)++;
+        }
+        if (!**str) {
+            regex_error("Length specifier not properly terminated!");
+        }
+        ret.maxCount = strtoull(*str, &terminator, 10);
+        *str = terminator;
+        (*str)++;
+    }
     return ret;
 }
 
-int regex_match_single_char(char toMatch, char *sequence, uint64_t flags) {
-    if (!toMatch) return 0;
-    size_t seqLength = strlen(sequence);
-    uint64_t seqType = regex_fetch_char_type(sequence, flags);
-    int retIndex = 0;
-    
-    if (regex_has_flag(&seqType, REGEX_ESCAPED_CHARACTER)) {
-        while(*sequence == '\\' && *(sequence+1)) sequence++;
-        if (toMatch == *sequence) return 1;
-    } else if (regex_has_flag(&seqType, REGEX_METACHARACTER)) {
-        while(*sequence == '\\' && *(sequence+1)) sequence++;
-        if (regex_special_char_match(*sequence, toMatch)) return 1;
-    } else {
-        if (toMatch == *sequence) return 1;
+RegexPatternChar *regex_compile_pattern(char *pattern) {
+    RegexPatternChar *ret = (RegexPatternChar *)malloc(sizeof(RegexPatternChar));
+    RegexPatternChar *cursor = ret;
+    *ret = regex_fetch_current_char_incr(&pattern);
+    while (*pattern) {
+        cursor -> next = (RegexPatternChar *)malloc(sizeof(RegexPatternChar));
+        cursor = cursor -> next;
+        *cursor = regex_fetch_current_char_incr(&pattern);
     }
-    return 0;
+    cursor -> next = NULL;
+    return ret;
 }
 
-RegexMatch regex_simple_match(char *str, char *pattern) {
-    size_t matchIndex = 0;
-    size_t patternLen = strlen(pattern);
-    char *patternStart = pattern;
-    char *matchStart = str;
-    while (1) {
-        if (!*matchStart) return (RegexMatch){0};
-        while (!regex_match_single_char(*matchStart, pattern, 0)) {
-            matchStart++;
-        }
-        while (regex_match_single_char(matchStart[matchIndex], pattern, 0)) {
-            matchIndex++;
-            while(*pattern == '\\') pattern++;
-            pattern++;
-        }
-        if (*pattern && ((pattern != patternStart + patternLen - 1 && *pattern != '\\') || (pattern != patternStart + patternLen - 2))) {
-            pattern = patternStart;
-            matchStart++;
-            matchIndex = 0;
-        } else {
-            return (RegexMatch){matchIndex, matchStart};
-        }
+void regex_print_pattern_char(RegexPatternChar patternChar) {
+    if (!regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
+        printf("%c ", patternChar.primaryChar);
     }
+    printf("(Flags: %llu, min: %zu, max: %zu", patternChar.flags, patternChar.minCount, patternChar.maxCount);
+    if (regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
+        printf(" char min: %c, char max: %c", patternChar.charClassRangeMin, patternChar.charClassRangeMax);
+    }
+    printf(") -> ");
 }
 
-void regex_print_match(RegexMatch match) {
-    printf("%.*s", (int)match.matchLength, match.match);
+void print_regex_compiled_pattern(RegexPatternChar *head) {
+    while(head) {
+        if (regex_has_flag(&head -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
+            RegexPatternChar *cursor = head -> charClassInternals;
+            size_t len = head -> charClassLength;
+            printf("Char class: [[");
+            for (size_t i = 0; i < len; i++) {
+                regex_print_pattern_char(*cursor);
+                cursor = cursor -> next;
+            }
+            printf("NULL]] ");
+        }
+        regex_print_pattern_char(*head);
+        head = head -> next;
+        if (!head) break;
+    }
+    printf("NULL\n");
 }
