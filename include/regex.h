@@ -148,6 +148,73 @@ uint64_t regex_get_capture_group_char_type(char toCheck) {
     }
 }
 
+void regex_set_char_count_generic(char **str, size_t *minCount, size_t *maxCount) {
+    if (**str == '?') {
+        *minCount = 0;
+        *maxCount = 1;
+        (*str)++;
+    } else if (**str == '*') {
+        *minCount = 0;
+        *maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (**str == '+') {
+        *minCount = 1;
+        *maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (**str == '{') {
+        (*str)++;
+        char *terminator;
+        *minCount = strtoull((*str)++, &terminator, 10);
+        *str = terminator;
+        while (**str == ' ' || **str == ',') {
+            (*str)++;
+        }
+        if (!**str) {
+            regex_error("Length specifier not properly terminated!");
+        }
+        *maxCount = strtoull(*str, &terminator, 10);
+        *str = terminator;
+        (*str)++;
+    } else {
+        *minCount = 1;
+        *maxCount = 1;
+    }
+}
+
+void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *maxCount) {
+    char toCheck = *(*str+1);
+    if (toCheck == '?') {
+        *minCount = 0;
+        *maxCount = 1;
+        (*str)++;
+    } else if (toCheck == '*') {
+        *minCount = 0;
+        *maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (toCheck == '+') {
+        *minCount = 1;
+        *maxCount = REGEX_INF_COUNT;
+        (*str)++;
+    } else if (toCheck == '{') {
+        printf("went inside brace counter\n");
+        (*str)+=2;
+        char *terminator;
+        *minCount = strtoull((*str)++, &terminator, 10);
+        *str = terminator;
+        while (**str == ' ' || **str == ',') {
+            (*str)++;
+        }
+        if (!**str) {
+            regex_error("Length specifier not properly terminated!");
+        }
+        *maxCount = strtoull(*str, &terminator, 10);
+        *str = terminator;
+    } else {
+        *minCount = 1;
+        *maxCount = 1;
+    }
+}
+
 void regex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
     const char * const patternStart = *pattern;
     regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_METACHARACTER_CLASS);
@@ -256,8 +323,9 @@ void regex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
             cursor -> charClassLength = 0;
             cursor -> subContainer = NULL;
         }
-        cursor -> minCount = 1;
-        cursor -> maxCount = 1;
+        // cursor -> minCount = 1;
+        // cursor -> maxCount = 1;
+        regex_set_char_count_in_container(pattern, &cursor -> minCount, &cursor -> maxCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -302,6 +370,7 @@ void regex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern)
         }
         cursor -> minCount = 1;
         cursor -> maxCount = 1;
+        regex_set_char_count_in_container(pattern, &cursor -> minCount, &cursor -> maxCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -343,8 +412,6 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
     ret.maxCount = 1;
     if (regex_has_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS)) {
         regex_compile_char_class(&ret, str);
-        (*str)++;
-        return ret; // skip the other metacharacters
     }
     if (regex_has_flag(&state, REGEX_STATE_INSIDE_CAPTURE_GROUP)) {
         regex_compile_capture_group(&ret, str);
@@ -353,33 +420,7 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
         regex_compile_lookahead(&ret, str);
     }
     (*str)++;
-    if (**str == '?') {
-        ret.minCount = 0;
-        ret.maxCount = 1;
-        (*str)++;
-    } else if (**str == '*') {
-        ret.minCount = 0;
-        ret.maxCount = REGEX_INF_COUNT;
-        (*str)++;
-    } else if (**str == '+') {
-        ret.minCount = 1;
-        ret.maxCount = REGEX_INF_COUNT;
-        (*str)++;
-    } else if (**str == '{') {
-        (*str)++;
-        char *terminator;
-        ret.minCount = strtoull((*str)++, &terminator, 10);
-        *str = terminator;
-        while (**str == ' ' || **str == ',') {
-            (*str)++;
-        }
-        if (!**str) {
-            regex_error("Length specifier not properly terminated!");
-        }
-        ret.maxCount = strtoull(*str, &terminator, 10);
-        *str = terminator;
-        (*str)++;
-    }
+    regex_set_char_count_generic(str, &ret.minCount, &ret.maxCount);
     return ret;
 }
 
