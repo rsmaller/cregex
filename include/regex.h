@@ -43,7 +43,7 @@ typedef struct RegexPatternChar {
 
 typedef struct RegexMatch {
     size_t matchLength;
-    char *match;
+    const char *match;
 } RegexMatch;
 
 typedef struct RegexContainer {
@@ -59,7 +59,7 @@ void regex_error(const char * const msg, ...) {
     exit(-1);
 }
 
-uint64_t regex_has_flag(uint64_t *toCheck, uint64_t flag) {
+uint64_t regex_has_flag(const uint64_t *toCheck, uint64_t flag) {
     return *toCheck & flag;
 }
 
@@ -75,11 +75,7 @@ void regex_toggle_flag(uint64_t *toCheck, uint64_t flag) {
     *toCheck ^= flag;
 }
 
-int regex_is_numeric(char toCheck) {
-    return toCheck >= '0' && toCheck <= '9';
-}
-
-uint64_t regex_get_nonescaped_char_type(char toCheck) {
+uint64_t regex_get_non_escaped_char_type(char toCheck) {
     switch (toCheck) {
         case '.':
             return REGEX_PATTERN_METACHARACTER;
@@ -179,6 +175,9 @@ void regex_set_char_count_generic(char **str, size_t *minCount, size_t *maxCount
         *minCount = 1;
         *maxCount = 1;
     }
+    if (*maxCount == 0) {
+        *maxCount = *minCount;
+    }
 }
 
 void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *maxCount) {
@@ -212,6 +211,9 @@ void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *max
     } else {
         *minCount = 1;
         *maxCount = 1;
+    }
+    if (*maxCount == 0) {
+        *maxCount = *minCount;
     }
 }
 
@@ -323,8 +325,6 @@ void regex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
             cursor -> charClassLength = 0;
             cursor -> subContainer = NULL;
         }
-        // cursor -> minCount = 1;
-        // cursor -> maxCount = 1;
         regex_set_char_count_in_container(pattern, &cursor -> minCount, &cursor -> maxCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
@@ -397,7 +397,7 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
     if (**str == '(' && *(*str+1) && *(*str+1) != '?' && !regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
         regex_set_flag(&state, REGEX_STATE_INSIDE_CAPTURE_GROUP);
     }
-    uint64_t charType = regex_get_nonescaped_char_type(**str);
+    uint64_t charType = regex_get_non_escaped_char_type(**str);
     if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
         regex_set_flag(&charType, REGEX_PATTERN_METACHARACTER);
     } else if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
@@ -448,7 +448,7 @@ void regex_print_pattern_char(RegexPatternChar patternChar) {
     printf(") -> ");
 }
 
-void regex_print_char_class(RegexPatternChar *head) {
+void regex_print_char_class(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     size_t len = head -> charClassLength;
     printf("[[Char class: ");
@@ -459,7 +459,7 @@ void regex_print_char_class(RegexPatternChar *head) {
     printf("NULL]] ");
 }
 
-void regex_print_capture_group(RegexPatternChar *head) {
+void regex_print_capture_group(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     printf("((Capture group: ");
     while (cursor) {
@@ -472,7 +472,7 @@ void regex_print_capture_group(RegexPatternChar *head) {
     printf("NULL)) ");
 }
 
-void regex_print_lookahead(RegexPatternChar *head) {
+void regex_print_lookahead(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     while (cursor) {
         if (regex_has_flag(&cursor -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
@@ -484,7 +484,7 @@ void regex_print_lookahead(RegexPatternChar *head) {
     printf("NULL))) ");
 }
 
-void regex_print_compiled_pattern(RegexPatternChar *head) {
+void regex_print_compiled_pattern(const RegexPatternChar *head) {
     while(head) {
         if (regex_has_flag(&head -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
             regex_print_char_class(head);
@@ -512,4 +512,90 @@ void regex_print_compiled_pattern(RegexPatternChar *head) {
         if (!head) break;
     }
     printf("NULL\n");
+}
+
+void regex_print_match(const RegexMatch match) {
+    printf("%.*s", (int)match.matchLength, match.match);
+}
+
+int regex_is_numeric(const char toMatch) {
+    return toMatch >= '0' && toMatch <= '9';
+}
+
+int regex_is_alphabetic(const char toMatch) {
+    return toMatch >= 'A' && toMatch <= 'z';
+}
+
+int regex_is_alphanumeric(const char toMatch) {
+    return regex_is_alphabetic(toMatch) || regex_is_numeric(toMatch) || toMatch == '-';
+}
+
+int regex_is_whitespace(const char toMatch) {
+    return toMatch == ' ' || toMatch == '\n' || toMatch == '\t' || toMatch == '\r';
+}
+
+int regex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
+    char matchAgainst = patternChar->primaryChar;
+    // printf("Comparing %c to %c\n", toMatch, matchAgainst);
+    if (!regex_has_flag(&patternChar->flags, REGEX_PATTERN_METACHARACTER)) {
+        if (matchAgainst == toMatch) return 1;
+    }
+    switch (matchAgainst) {
+        case 'd':
+            if (regex_is_numeric(toMatch)) return 1;
+            break;
+        case 'D':
+            if (!regex_is_numeric(toMatch)) return 1;
+            break;
+        case 's':
+            if (regex_is_whitespace(toMatch)) return 1;
+            break;
+        case 'S':
+            if (!regex_is_whitespace(toMatch)) return 1;
+            break;
+        case 'w':
+            if (regex_is_alphanumeric(toMatch)) return 1;
+            break;
+        case 'W':
+            if (!regex_is_alphanumeric(toMatch)) return 1;
+            break;
+        default:
+            return 0;
+    }
+}
+
+size_t regex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
+    size_t min = compiledPattern -> minCount;
+    size_t max = compiledPattern -> maxCount;
+    if (max > strlen(*str)) {
+        max = strlen(*str) - 1;
+    }
+    size_t matchingCharCount = 0;
+    while ((*str)[matchingCharCount] && regex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
+        matchingCharCount++;
+        if (matchingCharCount == max) break;
+    }
+    if (matchingCharCount < min) matchingCharCount = 0;
+    *str += matchingCharCount;
+    return matchingCharCount;
+}
+
+RegexMatch regex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
+    RegexPatternChar *cursor = compiledPattern;
+    RegexMatch res = {0};
+    const char *start = str;
+    const char *saveptr = str;
+    while (cursor) {
+        size_t currentMatchCount = regex_match_pattern_char(compiledPattern, &saveptr);
+        if (!currentMatchCount) {
+            start =  ++saveptr;
+            cursor = compiledPattern;
+            // printf("resetting with string %s and %s\n", saveptr, start);
+        } else {
+            cursor = cursor -> next;
+        }
+    }
+    res.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
+    res.match = start;
+    return res;
 }
