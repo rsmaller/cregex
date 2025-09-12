@@ -32,8 +32,8 @@
 typedef struct RegexPatternChar {
     char primaryChar;
     uint64_t flags;
-    size_t minCount;
-    size_t maxCount;
+    size_t minInstanceCount;
+    size_t maxInstanceCount;
     size_t charClassLength;
     struct RegexPatternChar *subContainer;
     struct RegexPatternChar *next;
@@ -144,23 +144,23 @@ uint64_t regex_get_capture_group_char_type(char toCheck) {
     }
 }
 
-void regex_set_char_count_generic(char **str, size_t *minCount, size_t *maxCount) {
+void regex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     if (**str == '?') {
-        *minCount = 0;
-        *maxCount = 1;
+        *minInstanceCount = 0;
+        *maxInstanceCount = 1;
         (*str)++;
     } else if (**str == '*') {
-        *minCount = 0;
-        *maxCount = REGEX_INF_COUNT;
+        *minInstanceCount = 0;
+        *maxInstanceCount = REGEX_INF_COUNT;
         (*str)++;
     } else if (**str == '+') {
-        *minCount = 1;
-        *maxCount = REGEX_INF_COUNT;
+        *minInstanceCount = 1;
+        *maxInstanceCount = REGEX_INF_COUNT;
         (*str)++;
     } else if (**str == '{') {
         (*str)++;
         char *terminator;
-        *minCount = strtoull((*str)++, &terminator, 10);
+        *minInstanceCount = strtoull((*str)++, &terminator, 10);
         *str = terminator;
         while (**str == ' ' || **str == ',') {
             (*str)++;
@@ -168,36 +168,36 @@ void regex_set_char_count_generic(char **str, size_t *minCount, size_t *maxCount
         if (!**str) {
             regex_error("Length specifier not properly terminated!");
         }
-        *maxCount = strtoull(*str, &terminator, 10);
+        *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
         (*str)++;
     } else {
-        *minCount = 1;
-        *maxCount = 1;
+        *minInstanceCount = 1;
+        *maxInstanceCount = 1;
     }
-    if (*maxCount == 0) {
-        *maxCount = *minCount;
+    if (*maxInstanceCount == 0) {
+        *maxInstanceCount = *minInstanceCount;
     }
 }
 
-void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *maxCount) {
+void regex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     char toCheck = *(*str+1);
     if (toCheck == '?') {
-        *minCount = 0;
-        *maxCount = 1;
+        *minInstanceCount = 0;
+        *maxInstanceCount = 1;
         (*str)++;
     } else if (toCheck == '*') {
-        *minCount = 0;
-        *maxCount = REGEX_INF_COUNT;
+        *minInstanceCount = 0;
+        *maxInstanceCount = REGEX_INF_COUNT;
         (*str)++;
     } else if (toCheck == '+') {
-        *minCount = 1;
-        *maxCount = REGEX_INF_COUNT;
+        *minInstanceCount = 1;
+        *maxInstanceCount = REGEX_INF_COUNT;
         (*str)++;
     } else if (toCheck == '{') {
         (*str)+=2;
         char *terminator;
-        *minCount = strtoull((*str)++, &terminator, 10);
+        *minInstanceCount = strtoull((*str)++, &terminator, 10);
         *str = terminator;
         while (**str == ' ' || **str == ',') {
             (*str)++;
@@ -205,14 +205,14 @@ void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *max
         if (!**str) {
             regex_error("Length specifier not properly terminated!");
         }
-        *maxCount = strtoull(*str, &terminator, 10);
+        *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
     } else {
-        *minCount = 1;
-        *maxCount = 1;
+        *minInstanceCount = 1;
+        *maxInstanceCount = 1;
     }
-    if (*maxCount == 0) {
-        *maxCount = *minCount;
+    if (*maxInstanceCount == 0) {
+        *maxInstanceCount = *minInstanceCount;
     }
 }
 
@@ -259,8 +259,8 @@ void regex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
         }
         currentClassChar -> charClassLength = 0;
         currentClassChar -> subContainer = NULL;
-        currentClassChar -> minCount = 1;
-        currentClassChar -> maxCount = 1;
+        currentClassChar -> minInstanceCount = 1;
+        currentClassChar -> maxInstanceCount = 1;
         if (*(*pattern+1) != ']' && **pattern != '\\') {
             currentClassChar -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             currentClassChar = currentClassChar -> next;
@@ -324,7 +324,7 @@ void regex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
             cursor -> charClassLength = 0;
             cursor -> subContainer = NULL;
         }
-        regex_set_char_count_in_container(pattern, &cursor -> minCount, &cursor -> maxCount);
+        regex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -367,9 +367,9 @@ void regex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern)
             cursor -> charClassLength = 0;
             cursor -> subContainer = NULL;
         }
-        cursor -> minCount = 1;
-        cursor -> maxCount = 1;
-        regex_set_char_count_in_container(pattern, &cursor -> minCount, &cursor -> maxCount);
+        cursor -> minInstanceCount = 1;
+        cursor -> maxInstanceCount = 1;
+        regex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -407,8 +407,8 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
     ret.subContainer = NULL;
     ret.next = NULL;
     ret.primaryChar = **str;
-    ret.minCount = 1;
-    ret.maxCount = 1;
+    ret.minInstanceCount = 1;
+    ret.maxInstanceCount = 1;
     if (regex_has_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS)) {
         regex_compile_char_class(&ret, str);
     }
@@ -419,7 +419,7 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
         regex_compile_lookahead(&ret, str);
     }
     (*str)++;
-    regex_set_char_count_generic(str, &ret.minCount, &ret.maxCount);
+    regex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
     return ret;
 }
 
@@ -440,7 +440,7 @@ void regex_print_pattern_char(RegexPatternChar patternChar) {
     if (!regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS | REGEX_PATTERN_CAPTURE_GROUP | REGEX_PATTERN_FORWARD_LOOKAHEAD | REGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
         printf("%c ", patternChar.primaryChar);
     }
-    printf("(Flags: %llu, min: %zu, max: %zu", patternChar.flags, patternChar.minCount, patternChar.maxCount);
+    printf("(Flags: %llu, min: %zu, max: %zu", patternChar.flags, patternChar.minInstanceCount, patternChar.maxInstanceCount);
     if (regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
         printf(" char min: %c, char max: %c", patternChar.charClassRangeMin, patternChar.charClassRangeMax);
     }
@@ -571,8 +571,8 @@ int regex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
 }
 
 size_t regex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
-    size_t min = compiledPattern -> minCount;
-    size_t max = compiledPattern -> maxCount;
+    size_t min = compiledPattern -> minInstanceCount;
+    size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
         max = strlen(*str) - 1;
     }
