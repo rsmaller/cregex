@@ -195,7 +195,6 @@ void regex_set_char_count_in_container(char **str, size_t *minCount, size_t *max
         *maxCount = REGEX_INF_COUNT;
         (*str)++;
     } else if (toCheck == '{') {
-        printf("went inside brace counter\n");
         (*str)+=2;
         char *terminator;
         *minCount = strtoull((*str)++, &terminator, 10);
@@ -534,34 +533,41 @@ int regex_is_whitespace(const char toMatch) {
     return toMatch == ' ' || toMatch == '\n' || toMatch == '\t' || toMatch == '\r';
 }
 
+int regex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
+
 int regex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
     char matchAgainst = patternChar->primaryChar;
     // printf("Comparing %c to %c\n", toMatch, matchAgainst);
     if (!regex_has_flag(&patternChar->flags, REGEX_PATTERN_METACHARACTER)) {
-        if (matchAgainst == toMatch) return 1;
+	return matchAgainst == toMatch;
+    } else if (regex_has_flag(&patternChar->flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
+    	return regex_compare_char_class(patternChar, toMatch);
     }
     switch (matchAgainst) {
         case 'd':
-            if (regex_is_numeric(toMatch)) return 1;
-            break;
+             return regex_is_numeric(toMatch); 
         case 'D':
-            if (!regex_is_numeric(toMatch)) return 1;
-            break;
+             return !regex_is_numeric(toMatch);
         case 's':
-            if (regex_is_whitespace(toMatch)) return 1;
-            break;
+             return regex_is_whitespace(toMatch);
         case 'S':
-            if (!regex_is_whitespace(toMatch)) return 1;
-            break;
+             return !regex_is_whitespace(toMatch);
         case 'w':
-            if (regex_is_alphanumeric(toMatch)) return 1;
-            break;
+             return regex_is_alphanumeric(toMatch);
         case 'W':
-            if (!regex_is_alphanumeric(toMatch)) return 1;
-            break;
+             return regex_is_alphanumeric(toMatch);
         default:
-            return 0;
+             return 0;
     }
+}
+
+int regex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
+	RegexPatternChar *start = classContainer -> subContainer;
+	while (start) {
+		if (regex_compare_single_char(start, toMatch)) return 1;
+		start = start -> next;
+	}
+	return 0;
 }
 
 size_t regex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {

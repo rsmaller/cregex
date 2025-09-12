@@ -67,6 +67,7 @@ dkms.conf
 /CMakeFiles
 /x64
 /Debug
+/build
 /Testing
 /.cmake
 /.idea

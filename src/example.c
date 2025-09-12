@@ -3,7 +3,7 @@
 
 int main() {
     char *mystr = " eeee   no maybe 6176534628";
-    char *mypattern = "\\d{1,5}";
+    char *mypattern = "[bay]{3}";
     char *saveptr = mystr;
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = regex_compile_pattern(mypattern);
