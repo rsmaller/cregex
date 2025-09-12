@@ -8,9 +8,7 @@ int main() {
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = regex_compile_pattern(mypattern);
     regex_print_compiled_pattern(pattern);
-    RegexMatch myMatch = regex_match_to_string(pattern, saveptr);
-    printf("Match: \"");
-    regex_print_match(myMatch);
-    printf("\"\n");
+    RegexContainer myMatch = regex_match_to_string(pattern, saveptr);
+    regex_print_match_container(myMatch);
     return 0;
 }

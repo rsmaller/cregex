@@ -586,9 +586,10 @@ size_t regex_match_pattern_char(RegexPatternChar *compiledPattern, const char **
     return matchingCharCount;
 }
 
-RegexMatch regex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
+RegexContainer regex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
     RegexPatternChar *cursor = compiledPattern;
     RegexMatch res = {0};
+    RegexContainer returnVal = {0, malloc(0)};
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
@@ -603,5 +604,18 @@ RegexMatch regex_match_to_string(RegexPatternChar *compiledPattern, const char *
     }
     res.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
     res.match = start;
-    return res;
+        returnVal.matches = realloc(returnVal.matches, ++returnVal.matchCount);
+    	returnVal.matches[returnVal.matchCount-1] = res;
+    return returnVal;
+}
+
+void regex_print_match_container(RegexContainer container) {
+    printf("Regex Container:\n");
+    printf("\tMatch Count: %zu\n", container.matchCount);
+    printf("\tMatches:\n");
+    for (size_t i = 0; i < container.matchCount; i++) {
+        printf("\t\t");
+        regex_print_match(container.matches[i]);
+        printf("\n");
+    }
 }
