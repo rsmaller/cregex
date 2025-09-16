@@ -4,7 +4,7 @@
 int main() {
     char *mystr = "yes no maybe 6176534628";
     // char *mypattern = "no.*617";
-    char *mypattern = "no m[ayb]{3}";
+    char *mypattern = "s.*m";
     char *saveptr = mystr;
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = cregex_compile_pattern(mypattern);

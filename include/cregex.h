@@ -576,7 +576,10 @@ int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
 size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str);
 
 size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
-    if (!str || !*str) return 0U;
+    if (!compiledPattern || !str || !*str) return 0U;
+    if (compiledPattern -> primaryChar == '.') {
+        printf("Inside a dot metachar!\n");
+    }
     size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
@@ -584,7 +587,12 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
     }
     if (!max) return 0;
     size_t matchingCharCount = 0;
-    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
+    int lookahead;
+    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount]) && (lookahead = cregex_lookahead(compiledPattern->next, (*str)+matchingCharCount+1))) {
+        if (compiledPattern -> primaryChar == '.') {
+            printf("lookahead for . with char %c: %d\n", (*str)[matchingCharCount], lookahead);
+            printf("lookahead char: %c against %c\n", compiledPattern -> next -> primaryChar, (*str)[matchingCharCount+1]);
+        }
         matchingCharCount++;
         if (matchingCharCount == max) break;
     }
@@ -593,26 +601,27 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
         cregex_error("Characters match exceeds length of string");
     }
     *str += matchingCharCount;
+    if (compiledPattern -> primaryChar == '.') {
+        printf("exiting a dot metachar!\n");
+    }
     return matchingCharCount;
 }
 
 size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
-    if (!compiledPattern || !compiledPattern -> next) return 0;
-    printf("Lookahead started with char %c\n", compiledPattern -> primaryChar);
+    if (!str || !*str || !compiledPattern || !compiledPattern -> next) return 1;
+    // printf("Lookahead started with char %c\n", compiledPattern -> primaryChar);
     RegexPatternChar *cursor = compiledPattern;
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
         if (!currentMatchCount){
-            if (*(saveptr+1)) start = ++saveptr;
-            else return 0U;
-            cursor = compiledPattern;
+            return 0U;
         } else {
             cursor = cursor -> next;
         }
     }
-    return (uintptr_t)saveptr - (uintptr_t)start;
+    return ((uintptr_t)saveptr - (uintptr_t)start);
 }
 RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
     RegexPatternChar *cursor = compiledPattern;
@@ -623,14 +632,13 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
     while (cursor) {
         if (!*saveptr) break;
         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
-        // size_t lookahead = !cregex_lookahead(compiledPattern -> next, str + 1);
         if (!currentMatchCount) {
-            printf("Reset at string %s because of either (count: %zu)\n", saveptr, currentMatchCount);
+            printf("Reset at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
         } else {
-            printf("Matched at string %s because of either (count: %zu)\n", saveptr, currentMatchCount);
+            printf("Matched at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
             cursor = cursor -> next;
         }
     }
