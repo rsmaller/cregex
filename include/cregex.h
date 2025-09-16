@@ -7,27 +7,27 @@
 #include <stdarg.h>
 
 //  Flag Macros
-#define REGEX_FLAG_BIT(x)             (((uint64_t)1)<<(x))
+#define CREGEX_FLAG_BIT(x)             (((uint64_t)1)<<(x))
 
-#define REGEX_STATE_INSIDE_CHAR_CLASS               REGEX_FLAG_BIT(0)
-#define REGEX_STATE_ESCAPED_CHAR                    REGEX_FLAG_BIT(1)
-#define REGEX_STATE_INSIDE_MATCH_CONTAINER          REGEX_FLAG_BIT(2)
-#define REGEX_STATE_INSIDE_CAPTURE_GROUP            REGEX_FLAG_BIT(3)
-#define REGEX_STATE_INSIDE_LOOKAHEAD                REGEX_FLAG_BIT(4)
+#define CREGEX_STATE_INSIDE_CHAR_CLASS               CREGEX_FLAG_BIT(0)
+#define CREGEX_STATE_ESCAPED_CHAR                    CREGEX_FLAG_BIT(1)
+#define CREGEX_STATE_INSIDE_MATCH_CONTAINER          CREGEX_FLAG_BIT(2)
+#define CREGEX_STATE_INSIDE_CAPTURE_GROUP            CREGEX_FLAG_BIT(3)
+#define CREGEX_STATE_INSIDE_LOOKAHEAD                CREGEX_FLAG_BIT(4)
 
-#define REGEX_PATTERN_METACHARACTER                 REGEX_FLAG_BIT(0)
-#define REGEX_PATTERN_METACHARACTER_MODIFIER        REGEX_FLAG_BIT(1)
-#define REGEX_PATTERN_METACHARACTER_CLASS           REGEX_FLAG_BIT(2)
-#define REGEX_PATTERN_METACHARACTER_CLASS_RANGE     REGEX_FLAG_BIT(3)
-#define REGEX_PATTERN_CAPTURE_GROUP                 REGEX_FLAG_BIT(4)
-#define REGEX_PATTERN_NEGATIVE_MATCH                REGEX_FLAG_BIT(5)
-#define REGEX_PATTERN_FORWARD_LOOKAHEAD             REGEX_FLAG_BIT(6)
-#define REGEX_PATTERN_BACKWARD_LOOKAHEAD            REGEX_FLAG_BIT(7)
-#define REGEX_PATTERN_DUMMY_CAPTURE_GROUP           REGEX_FLAG_BIT(8)
-#define REGEX_PATTERN_CONDITIONAL_GROUP             REGEX_FLAG_BIT(9)
+#define CREGEX_PATTERN_METACHARACTER                 CREGEX_FLAG_BIT(0)
+#define CREGEX_PATTERN_METACHARACTER_MODIFIER        CREGEX_FLAG_BIT(1)
+#define CREGEX_PATTERN_METACHARACTER_CLASS           CREGEX_FLAG_BIT(2)
+#define CREGEX_PATTERN_METACHARACTER_CLASS_RANGE     CREGEX_FLAG_BIT(3)
+#define CREGEX_PATTERN_CAPTURE_GROUP                 CREGEX_FLAG_BIT(4)
+#define CREGEX_PATTERN_NEGATIVE_MATCH                CREGEX_FLAG_BIT(5)
+#define CREGEX_PATTERN_FORWARD_LOOKAHEAD             CREGEX_FLAG_BIT(6)
+#define CREGEX_PATTERN_BACKWARD_LOOKAHEAD            CREGEX_FLAG_BIT(7)
+#define CREGEX_PATTERN_DUMMY_CAPTURE_GROUP           CREGEX_FLAG_BIT(8)
+#define CREGEX_PATTERN_CONDITIONAL_GROUP             CREGEX_FLAG_BIT(9)
 
 //  Other Macros
-#define REGEX_INF_COUNT SIZE_MAX
+#define CREGEX_INF_COUNT SIZE_MAX
 
 typedef struct RegexPatternChar {
     char primaryChar;
@@ -51,7 +51,7 @@ typedef struct RegexContainer {
     RegexMatch *matches;
 } RegexContainer;
 
-void regex_error(const char * const msg, ...) {
+void cregex_error(const char * const msg, ...) {
     va_list args;
     va_start(args, msg);
     vfprintf(stderr, msg, args);
@@ -59,103 +59,103 @@ void regex_error(const char * const msg, ...) {
     exit(-1);
 }
 
-uint64_t regex_has_flag(const uint64_t *toCheck, uint64_t flag) {
+uint64_t cregex_has_flag(const uint64_t *toCheck, uint64_t flag) {
     return *toCheck & flag;
 }
 
-void regex_set_flag(uint64_t *toCheck, uint64_t flag) {
+void cregex_set_flag(uint64_t *toCheck, uint64_t flag) {
     *toCheck |= flag;
 }
 
-void regex_clear_flag(uint64_t *toCheck, uint64_t flag) {
+void cregex_clear_flag(uint64_t *toCheck, uint64_t flag) {
     *toCheck &= ~flag;
 }
 
-void regex_toggle_flag(uint64_t *toCheck, uint64_t flag) {
+void cregex_toggle_flag(uint64_t *toCheck, uint64_t flag) {
     *toCheck ^= flag;
 }
 
-uint64_t regex_get_non_escaped_char_type(char toCheck) {
+uint64_t cregex_get_non_escaped_char_type(char toCheck) {
     switch (toCheck) {
         case '.':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '*':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '+':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '$':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '^':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '[':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '{':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '(':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case ']':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '}':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case ')':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         default:
             return 0;
     }
 }
 
-uint64_t regex_get_char_class_char_type(char toCheck) {
+uint64_t cregex_get_char_class_char_type(char toCheck) {
     switch (toCheck) {
         case '^':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '\\':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '-':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case ']':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         default:
             return 0;
     }
 }
 
-uint64_t regex_get_capture_group_char_type(char toCheck) {
+uint64_t cregex_get_capture_group_char_type(char toCheck) {
     switch (toCheck) {
         case '.':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '{':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '*':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '+':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '?':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '^':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '$':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '\\':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         case '|':
-            return REGEX_PATTERN_METACHARACTER;
+            return CREGEX_PATTERN_METACHARACTER;
         default:
             return 0;
     }
 }
 
-void regex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
+void cregex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     if (**str == '?') {
         *minInstanceCount = 0;
         *maxInstanceCount = 1;
         (*str)++;
     } else if (**str == '*') {
         *minInstanceCount = 0;
-        *maxInstanceCount = REGEX_INF_COUNT;
+        *maxInstanceCount = CREGEX_INF_COUNT;
         (*str)++;
     } else if (**str == '+') {
         *minInstanceCount = 1;
-        *maxInstanceCount = REGEX_INF_COUNT;
+        *maxInstanceCount = CREGEX_INF_COUNT;
         (*str)++;
     } else if (**str == '{') {
         (*str)++;
@@ -166,7 +166,7 @@ void regex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *
             (*str)++;
         }
         if (!**str) {
-            regex_error("Length specifier not properly terminated!");
+            cregex_error("Length specifier not properly terminated!");
         }
         *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
@@ -180,7 +180,7 @@ void regex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *
     }
 }
 
-void regex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
+void cregex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     char toCheck = *(*str+1);
     if (toCheck == '?') {
         *minInstanceCount = 0;
@@ -188,11 +188,11 @@ void regex_set_char_count_in_container(char **str, size_t *minInstanceCount, siz
         (*str)++;
     } else if (toCheck == '*') {
         *minInstanceCount = 0;
-        *maxInstanceCount = REGEX_INF_COUNT;
+        *maxInstanceCount = CREGEX_INF_COUNT;
         (*str)++;
     } else if (toCheck == '+') {
         *minInstanceCount = 1;
-        *maxInstanceCount = REGEX_INF_COUNT;
+        *maxInstanceCount = CREGEX_INF_COUNT;
         (*str)++;
     } else if (toCheck == '{') {
         (*str)+=2;
@@ -203,7 +203,7 @@ void regex_set_char_count_in_container(char **str, size_t *minInstanceCount, siz
             (*str)++;
         }
         if (!**str) {
-            regex_error("Length specifier not properly terminated!");
+            cregex_error("Length specifier not properly terminated!");
         }
         *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
@@ -216,43 +216,43 @@ void regex_set_char_count_in_container(char **str, size_t *minInstanceCount, siz
     }
 }
 
-void regex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
+void cregex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
     const char * const patternStart = *pattern;
-    regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_METACHARACTER_CLASS);
+    cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_METACHARACTER_CLASS);
     size_t charClassLength = 0;
     (*pattern)++;
     patternToAdd -> subContainer = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *currentClassChar = patternToAdd -> subContainer;
     while (**pattern) {
         if (!**pattern) {
-            regex_error("Character class not properly terminated!");
+            cregex_error("Character class not properly terminated!");
         }
         if (**pattern == ']' && *pattern > patternStart && *(*pattern-1) != '\\') {
             break;
         }
         charClassLength++;
-        uint64_t charType = regex_get_char_class_char_type(**pattern);
+        uint64_t charType = cregex_get_char_class_char_type(**pattern);
         if (**pattern == '\\') {
             (*pattern)++;
-            charType = regex_get_char_class_char_type(**pattern);
-            if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
-            } else if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
+            charType = cregex_get_char_class_char_type(**pattern);
+            if (cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
+            } else if (!cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
             }
         } else if (**pattern == '^' && *(*pattern-1) != '\\') {
-            regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_NEGATIVE_MATCH);
+            cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_NEGATIVE_MATCH);
             (*pattern)++;
         }
         currentClassChar -> flags = charType;
         if (*(*pattern+1) == '-' && **pattern != '\\') {
-            regex_set_flag(&currentClassChar -> flags, REGEX_PATTERN_METACHARACTER_CLASS_RANGE);
+            cregex_set_flag(&currentClassChar -> flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE);
             currentClassChar -> primaryChar = *(*pattern+1);
             currentClassChar -> charClassRangeMin = **pattern;
             currentClassChar -> charClassRangeMax = *(*pattern+2);
             *pattern += 2;
             if (currentClassChar -> charClassRangeMin >= currentClassChar -> charClassRangeMax) {
-                regex_error("Character %c is out of range of character %c in character class", currentClassChar -> charClassRangeMin, currentClassChar -> charClassRangeMax);
+                cregex_error("Character %c is out of range of character %c in character class", currentClassChar -> charClassRangeMin, currentClassChar -> charClassRangeMax);
             }
         } else {
             currentClassChar -> primaryChar = **pattern;
@@ -272,59 +272,59 @@ void regex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
     patternToAdd -> charClassLength = charClassLength;
 }
 
-void regex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
+void cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
     const char * const patternStart = *pattern;
     (*pattern)++;
     if (!strncmp(*pattern, "?:", 2)) {
-        regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_DUMMY_CAPTURE_GROUP);
+        cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP);
         *pattern += 2;
     } else if (!strncmp(*pattern, "?!", 2)) {
-        regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_FORWARD_LOOKAHEAD | REGEX_PATTERN_NEGATIVE_MATCH);
+        cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_FORWARD_LOOKAHEAD | CREGEX_PATTERN_NEGATIVE_MATCH);
         *pattern += 2;
     } else if (!strncmp(*pattern, "?<!", 3)) {
-        regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_BACKWARD_LOOKAHEAD | REGEX_PATTERN_NEGATIVE_MATCH);
+        cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_BACKWARD_LOOKAHEAD | CREGEX_PATTERN_NEGATIVE_MATCH);
         *pattern += 3;
     } else if (!strncmp(*pattern, "?<=", 3)) {
-        regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_BACKWARD_LOOKAHEAD);
+        cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_BACKWARD_LOOKAHEAD);
         *pattern += 3;
     } else if (!strncmp(*pattern, "?=", 2)) {
-        regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_FORWARD_LOOKAHEAD);
+        cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_FORWARD_LOOKAHEAD);
         *pattern += 2;
     } else {
-        regex_error("Invalid pattern (%s passed to parser for lookup compilation", *pattern);
+        cregex_error("Invalid pattern (%s passed to parser for lookup compilation", *pattern);
     }
     patternToAdd -> subContainer = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *cursor = patternToAdd -> subContainer;
     while (**pattern) {
         if (!**pattern) {
-            regex_error("Character class not properly terminated!");
+            cregex_error("Character class not properly terminated!");
         }
         if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
             break;
         }
-        uint64_t charType = regex_get_capture_group_char_type(**pattern);
+        uint64_t charType = cregex_get_capture_group_char_type(**pattern);
         if (**pattern == '|' && *(*pattern-1) != '\\') {
-            regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_CONDITIONAL_GROUP);
+            cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_CONDITIONAL_GROUP);
         }
         if (**pattern == '\\') {
             (*pattern)++;
-            charType = regex_get_capture_group_char_type(**pattern);
-            if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
-            } else if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_set_flag(&charType, REGEX_PATTERN_METACHARACTER);
+            charType = cregex_get_capture_group_char_type(**pattern);
+            if (cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
+            } else if (!cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_set_flag(&charType, CREGEX_PATTERN_METACHARACTER);
             }
         }
         cursor -> primaryChar = **pattern;
         if (**pattern == '[' && *(*pattern-1) != '\\')  {
             printf("Going in code block with cursor char %c\n", cursor -> primaryChar);
-            regex_compile_char_class(cursor, pattern);
+            cregex_compile_char_class(cursor, pattern);
         } else {
             cursor -> flags |= charType;
             cursor -> charClassLength = 0;
             cursor -> subContainer = NULL;
         }
-        regex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+        cregex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -335,33 +335,33 @@ void regex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
     }
 }
 
-void regex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern) {
+void cregex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern) {
     const char * const patternStart = *pattern;
-    regex_set_flag(&patternToAdd -> flags, REGEX_PATTERN_CAPTURE_GROUP);
+    cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_CAPTURE_GROUP);
     (*pattern)++;
     patternToAdd -> subContainer = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *cursor = patternToAdd -> subContainer;
     while (**pattern) {
         if (!**pattern) {
-            regex_error("Character class not properly terminated!");
+            cregex_error("Character class not properly terminated!");
         }
         if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
             break;
         }
-        uint64_t charType = regex_get_capture_group_char_type(**pattern);
+        uint64_t charType = cregex_get_capture_group_char_type(**pattern);
         if (**pattern == '\\') {
             (*pattern)++;
-            charType = regex_get_capture_group_char_type(**pattern);
-            if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
-            } else if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER)) {
-                regex_set_flag(&charType, REGEX_PATTERN_METACHARACTER);
+            charType = cregex_get_capture_group_char_type(**pattern);
+            if (cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
+            } else if (!cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+                cregex_set_flag(&charType, CREGEX_PATTERN_METACHARACTER);
             }
         }
         cursor -> primaryChar = **pattern;
         if (**pattern == '[' && *(*pattern-1) != '\\')  {
             printf("Going in code block with cursor char %c\n", cursor -> primaryChar);
-            regex_compile_char_class(cursor, pattern);
+            cregex_compile_char_class(cursor, pattern);
         } else {
             cursor -> flags |= charType;
             cursor -> charClassLength = 0;
@@ -369,7 +369,7 @@ void regex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern)
         }
         cursor -> minInstanceCount = 1;
         cursor -> maxInstanceCount = 1;
-        regex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+        cregex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
         if (*(*pattern+1) != ')' && **pattern != '\\') {
             cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
             cursor = cursor -> next;
@@ -380,27 +380,27 @@ void regex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern)
     }
 }
 
-RegexPatternChar regex_fetch_current_char_incr(char **str) {
+RegexPatternChar cregex_fetch_current_char_incr(char **str) {
     RegexPatternChar ret = {0};
     uint64_t state = 0;
     if (**str == '\\') {
-        regex_set_flag(&state, REGEX_STATE_ESCAPED_CHAR);
+        cregex_set_flag(&state, CREGEX_STATE_ESCAPED_CHAR);
         (*str)++;
     }
-    if (**str == '[' && !regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
-        regex_set_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS);
+    if (**str == '[' && !cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        cregex_set_flag(&state, CREGEX_STATE_INSIDE_CHAR_CLASS);
     }
-    if (**str == '(' && *(*str+1) && *(*str+1) == '?' && !regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
-        regex_set_flag(&state, REGEX_STATE_INSIDE_LOOKAHEAD);
+    if (**str == '(' && *(*str+1) && *(*str+1) == '?' && !cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        cregex_set_flag(&state, CREGEX_STATE_INSIDE_LOOKAHEAD);
     }
-    if (**str == '(' && *(*str+1) && *(*str+1) != '?' && !regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
-        regex_set_flag(&state, REGEX_STATE_INSIDE_CAPTURE_GROUP);
+    if (**str == '(' && *(*str+1) && *(*str+1) != '?' && !cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        cregex_set_flag(&state, CREGEX_STATE_INSIDE_CAPTURE_GROUP);
     }
-    uint64_t charType = regex_get_non_escaped_char_type(**str);
-    if (!regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
-        regex_set_flag(&charType, REGEX_PATTERN_METACHARACTER);
-    } else if (regex_has_flag(&charType, REGEX_PATTERN_METACHARACTER) && regex_has_flag(&state, REGEX_STATE_ESCAPED_CHAR)) {
-        regex_clear_flag(&charType, REGEX_PATTERN_METACHARACTER);
+    uint64_t charType = cregex_get_non_escaped_char_type(**str);
+    if (!cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER) && cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        cregex_set_flag(&charType, CREGEX_PATTERN_METACHARACTER);
+    } else if (cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER) && cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
     }
     ret.flags = charType;
     ret.charClassLength = 0;
@@ -409,213 +409,245 @@ RegexPatternChar regex_fetch_current_char_incr(char **str) {
     ret.primaryChar = **str;
     ret.minInstanceCount = 1;
     ret.maxInstanceCount = 1;
-    if (regex_has_flag(&state, REGEX_STATE_INSIDE_CHAR_CLASS)) {
-        regex_compile_char_class(&ret, str);
+    if (cregex_has_flag(&state, CREGEX_STATE_INSIDE_CHAR_CLASS)) {
+        cregex_compile_char_class(&ret, str);
     }
-    if (regex_has_flag(&state, REGEX_STATE_INSIDE_CAPTURE_GROUP)) {
-        regex_compile_capture_group(&ret, str);
+    if (cregex_has_flag(&state, CREGEX_STATE_INSIDE_CAPTURE_GROUP)) {
+        cregex_compile_capture_group(&ret, str);
     }
-    if (regex_has_flag(&state, REGEX_STATE_INSIDE_LOOKAHEAD)) {
-        regex_compile_lookahead(&ret, str);
+    if (cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKAHEAD)) {
+        cregex_compile_lookahead(&ret, str);
     }
     (*str)++;
-    regex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
+    cregex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
     return ret;
 }
 
-RegexPatternChar *regex_compile_pattern(char *pattern) {
+RegexPatternChar *cregex_compile_pattern(char *pattern) {
     RegexPatternChar *ret = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *cursor = ret;
-    *ret = regex_fetch_current_char_incr(&pattern);
+    *ret = cregex_fetch_current_char_incr(&pattern);
     while (*pattern) {
         cursor -> next = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
         cursor = cursor -> next;
-        *cursor = regex_fetch_current_char_incr(&pattern);
+        *cursor = cregex_fetch_current_char_incr(&pattern);
     }
     cursor -> next = NULL;
     return ret;
 }
 
-void regex_print_pattern_char(RegexPatternChar patternChar) {
-    if (!regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS | REGEX_PATTERN_CAPTURE_GROUP | REGEX_PATTERN_FORWARD_LOOKAHEAD | REGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
+void cregex_print_pattern_char(RegexPatternChar patternChar) {
+    if (!cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS | CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_FORWARD_LOOKAHEAD | CREGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
         printf("%c ", patternChar.primaryChar);
     }
     printf("(Flags: %llu, min: %zu, max: %zu", patternChar.flags, patternChar.minInstanceCount, patternChar.maxInstanceCount);
-    if (regex_has_flag(&patternChar.flags, REGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
+    if (cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
         printf(" char min: %c, char max: %c", patternChar.charClassRangeMin, patternChar.charClassRangeMax);
     }
     printf(") -> ");
 }
 
-void regex_print_char_class(const RegexPatternChar *head) {
+void cregex_print_char_class(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     size_t len = head -> charClassLength;
     printf("[[Char class: ");
     for (size_t i = 0; i < len; i++) {
-        regex_print_pattern_char(*cursor);
+        cregex_print_pattern_char(*cursor);
         cursor = cursor -> next;
     }
     printf("NULL]] ");
 }
 
-void regex_print_capture_group(const RegexPatternChar *head) {
+void cregex_print_capture_group(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     printf("((Capture group: ");
     while (cursor) {
-        if (regex_has_flag(&cursor -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
-            regex_print_char_class(cursor);
+        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+            cregex_print_char_class(cursor);
         }
-        regex_print_pattern_char(*cursor);
+        cregex_print_pattern_char(*cursor);
         cursor = cursor -> next;
     }
     printf("NULL)) ");
 }
 
-void regex_print_lookahead(const RegexPatternChar *head) {
+void cregex_print_lookahead(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> subContainer;
     while (cursor) {
-        if (regex_has_flag(&cursor -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
-            regex_print_char_class(cursor);
+        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+            cregex_print_char_class(cursor);
         }
-        regex_print_pattern_char(*cursor);
+        cregex_print_pattern_char(*cursor);
         cursor = cursor -> next;
     }
     printf("NULL))) ");
 }
 
-void regex_print_compiled_pattern(const RegexPatternChar *head) {
+void cregex_print_compiled_pattern(const RegexPatternChar *head) {
     while(head) {
-        if (regex_has_flag(&head -> flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
-            regex_print_char_class(head);
-        } else if (regex_has_flag(&head -> flags, REGEX_PATTERN_CAPTURE_GROUP)) {
-            regex_print_capture_group(head);
-        } else if (regex_has_flag(&head -> flags, REGEX_PATTERN_FORWARD_LOOKAHEAD) || regex_has_flag(&head -> flags, REGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
+        if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+            cregex_print_char_class(head);
+        } else if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
+            cregex_print_capture_group(head);
+        } else if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_FORWARD_LOOKAHEAD) || cregex_has_flag(&head -> flags, CREGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
             printf("(((");
-            if (regex_has_flag(&head -> flags, REGEX_PATTERN_FORWARD_LOOKAHEAD)) {
+            if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_FORWARD_LOOKAHEAD)) {
                 printf("Forward ");
-            } else if (regex_has_flag(&head -> flags, REGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
+            } else if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_BACKWARD_LOOKAHEAD)) {
                 printf("Backward ");
             }
-            if (regex_has_flag(&head -> flags, REGEX_PATTERN_NEGATIVE_MATCH)) {
+            if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_NEGATIVE_MATCH)) {
                 printf("negative ");
             }
             printf("lookahead: ");
-            regex_print_lookahead(head);
+            cregex_print_lookahead(head);
 
-        } else if (regex_has_flag(&head -> flags, REGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
+        } else if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
             printf("(((Dummy: ");
-            regex_print_lookahead(head);
+            cregex_print_lookahead(head);
         }
-        regex_print_pattern_char(*head);
+        cregex_print_pattern_char(*head);
         head = head -> next;
         if (!head) break;
     }
     printf("NULL\n");
 }
 
-void regex_print_match(const RegexMatch match) {
+void cregex_print_match(const RegexMatch match) {
     printf("%.*s", (int)match.matchLength, match.match);
 }
 
-int regex_is_numeric(const char toMatch) {
+int cregex_is_numeric(const char toMatch) {
     return toMatch >= '0' && toMatch <= '9';
 }
 
-int regex_is_alphabetic(const char toMatch) {
+int cregex_is_alphabetic(const char toMatch) {
     return toMatch >= 'A' && toMatch <= 'z';
 }
 
-int regex_is_alphanumeric(const char toMatch) {
-    return regex_is_alphabetic(toMatch) || regex_is_numeric(toMatch) || toMatch == '-';
+int cregex_is_alphanumeric(const char toMatch) {
+    return cregex_is_alphabetic(toMatch) || cregex_is_numeric(toMatch) || toMatch == '-';
 }
 
-int regex_is_whitespace(const char toMatch) {
+int cregex_is_whitespace(const char toMatch) {
     return toMatch == ' ' || toMatch == '\n' || toMatch == '\t' || toMatch == '\r';
 }
 
-int regex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
+int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
 
-int regex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
+int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
     char matchAgainst = patternChar->primaryChar;
     // printf("Comparing %c to %c\n", toMatch, matchAgainst);
-    if (!regex_has_flag(&patternChar->flags, REGEX_PATTERN_METACHARACTER)) {
+    if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
 	return matchAgainst == toMatch;
-    } else if (regex_has_flag(&patternChar->flags, REGEX_PATTERN_METACHARACTER_CLASS)) {
-    	return regex_compare_char_class(patternChar, toMatch);
+    }
+    if (cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+    	return cregex_compare_char_class(patternChar, toMatch);
     }
     switch (matchAgainst) {
         case 'd':
-             return regex_is_numeric(toMatch); 
+             return cregex_is_numeric(toMatch); 
         case 'D':
-             return !regex_is_numeric(toMatch);
+             return !cregex_is_numeric(toMatch);
         case 's':
-             return regex_is_whitespace(toMatch);
+             return cregex_is_whitespace(toMatch);
         case 'S':
-             return !regex_is_whitespace(toMatch);
+             return !cregex_is_whitespace(toMatch);
         case 'w':
-             return regex_is_alphanumeric(toMatch);
+             return cregex_is_alphanumeric(toMatch);
         case 'W':
-             return regex_is_alphanumeric(toMatch);
+             return cregex_is_alphanumeric(toMatch);
+        case '.':
+             return toMatch != '\n';
         default:
              return 0;
     }
 }
 
-int regex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
+int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
 	RegexPatternChar *start = classContainer -> subContainer;
 	while (start) {
-		if (regex_compare_single_char(start, toMatch)) return 1;
+		if (cregex_compare_single_char(start, toMatch)) return 1;
 		start = start -> next;
 	}
 	return 0;
 }
 
-size_t regex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
+size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str);
+
+size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
+    if (!str || !*str) return 0U;
     size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
-        max = strlen(*str) - 1;
+        max = strlen(*str);
     }
+    if (!max) return 0;
     size_t matchingCharCount = 0;
-    while ((*str)[matchingCharCount] && regex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
+    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
         matchingCharCount++;
         if (matchingCharCount == max) break;
     }
     if (matchingCharCount < min) matchingCharCount = 0;
+    if (matchingCharCount > strlen(*str)) {
+        cregex_error("Characters match exceeds length of string");
+    }
     *str += matchingCharCount;
     return matchingCharCount;
 }
 
-RegexContainer regex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
+size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
+    if (!compiledPattern || !compiledPattern -> next) return 0;
+    printf("Lookahead started with char %c\n", compiledPattern -> primaryChar);
+    RegexPatternChar *cursor = compiledPattern;
+    const char *start = str;
+    const char *saveptr = str;
+    while (cursor) {
+        size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
+        if (!currentMatchCount){
+            if (*(saveptr+1)) start = ++saveptr;
+            else return 0U;
+            cursor = compiledPattern;
+        } else {
+            cursor = cursor -> next;
+        }
+    }
+    return (uintptr_t)saveptr - (uintptr_t)start;
+}
+RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
     RegexPatternChar *cursor = compiledPattern;
     RegexMatch res = {0};
     RegexContainer returnVal = {0, malloc(0)};
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
-        size_t currentMatchCount = regex_match_pattern_char(compiledPattern, &saveptr);
+        if (!*saveptr) break;
+        size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
+        // size_t lookahead = !cregex_lookahead(compiledPattern -> next, str + 1);
         if (!currentMatchCount) {
-            start =  ++saveptr;
+            printf("Reset at string %s because of either (count: %zu)\n", saveptr, currentMatchCount);
+            if (*(saveptr+1)) start = ++saveptr;
+            else break;
             cursor = compiledPattern;
-            // printf("resetting with string %s and %s\n", saveptr, start);
         } else {
+            printf("Matched at string %s because of either (count: %zu)\n", saveptr, currentMatchCount);
             cursor = cursor -> next;
         }
     }
     res.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
     res.match = start;
-        returnVal.matches = realloc(returnVal.matches, ++returnVal.matchCount);
-    	returnVal.matches[returnVal.matchCount-1] = res;
+    returnVal.matches = realloc(returnVal.matches, ++returnVal.matchCount);
+    returnVal.matches[returnVal.matchCount-1] = res;
     return returnVal;
 }
 
-void regex_print_match_container(RegexContainer container) {
+void cregex_print_match_container(RegexContainer container) {
     printf("Regex Container:\n");
     printf("\tMatch Count: %zu\n", container.matchCount);
     printf("\tMatches:\n");
     for (size_t i = 0; i < container.matchCount; i++) {
         printf("\t\t");
-        regex_print_match(container.matches[i]);
-        printf("\n");
+        cregex_print_match(container.matches[i]);
+        printf(" (Length: %zu)\n", container.matches[i].matchLength);
     }
 }
