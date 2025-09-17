@@ -291,7 +291,7 @@ void cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
         cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_FORWARD_LOOKAHEAD);
         *pattern += 2;
     } else {
-        cregex_error("Invalid pattern (%s passed to parser for lookup compilation", *pattern);
+        cregex_error("Invalid pattern %s passed to parser for lookup compilation", *pattern);
     }
     patternToAdd -> subContainer = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *cursor = patternToAdd -> subContainer;
