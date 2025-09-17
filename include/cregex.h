@@ -537,7 +537,6 @@ int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
 
 int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
     char matchAgainst = patternChar->primaryChar;
-    // printf("Comparing %c to %c\n", toMatch, matchAgainst);
     if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
 	return matchAgainst == toMatch;
     }
@@ -608,8 +607,7 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
 }
 
 size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
-    if (!str || !*str || !compiledPattern || !compiledPattern -> next) return 1;
-    // printf("Lookahead started with char %c\n", compiledPattern -> primaryChar);
+    if (!str || !compiledPattern) return 1;
     RegexPatternChar *cursor = compiledPattern;
     const char *start = str;
     const char *saveptr = str;
@@ -624,6 +622,7 @@ size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
     return ((uintptr_t)saveptr - (uintptr_t)start);
 }
 RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
+    if (!compiledPattern || !str) return (RegexContainer){0};
     RegexPatternChar *cursor = compiledPattern;
     RegexMatch res = {0};
     RegexContainer returnVal = {0, malloc(0)};
