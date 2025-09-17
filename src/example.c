@@ -2,9 +2,10 @@
 #include "cregex.h"
 
 int main() {
-    char *mystr = "yes no maybe 6176534628";
+    char *mystr = "yes no maybe 6176534628 abc";
     // char *mypattern = "no.*617";
-    char *mypattern = "o m[bay]{3}e \\d";
+    // char *mypattern = "o.*\\d";
+    char *mypattern = "s[a-zA-Z ]*\\d";
     char *saveptr = mystr;
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = cregex_compile_pattern(mypattern);

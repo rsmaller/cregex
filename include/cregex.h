@@ -484,7 +484,7 @@ void cregex_print_lookahead(const RegexPatternChar *head) {
 }
 
 void cregex_print_compiled_pattern(const RegexPatternChar *head) {
-    while(head) {
+    while (head) {
         if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
             cregex_print_char_class(head);
         } else if (cregex_has_flag(&head -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
@@ -536,13 +536,8 @@ int cregex_is_whitespace(const char toMatch) {
 int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
 
 int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
+    if (!patternChar || !toMatch) return 0;
     char matchAgainst = patternChar->primaryChar;
-    if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
-	return matchAgainst == toMatch;
-    }
-    if (cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
-    	return cregex_compare_char_class(patternChar, toMatch);
-    }
     switch (matchAgainst) {
         case 'd':
              return cregex_is_numeric(toMatch); 
@@ -555,16 +550,34 @@ int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
         case 'w':
              return cregex_is_alphanumeric(toMatch);
         case 'W':
-             return cregex_is_alphanumeric(toMatch);
+             return !cregex_is_alphanumeric(toMatch);
         case '.':
              return toMatch != '\n';
+        case '-':
+            return toMatch <= patternChar -> charClassRangeMax && toMatch >= patternChar -> charClassRangeMin;
         default:
-             return 0;
+            if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
+            return matchAgainst == toMatch;
+            }
+            if (cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+                return cregex_compare_char_class(patternChar, toMatch);
+            }
     }
+    return 0;
+}
+
+int cregex_compare_char_length(RegexPatternChar *patternChar, char *matchAgainst, size_t count) {
+    int ret = 1;
+    for (size_t i=0; i<count; i++) {
+        ret = ret && cregex_compare_single_char(patternChar, matchAgainst[i]);
+    }
+    return ret;
 }
 
 int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
+    if (!classContainer || !toMatch) return 0;
 	RegexPatternChar *start = classContainer -> subContainer;
+    if (!start) return 0;
 	while (start) {
 		if (cregex_compare_single_char(start, toMatch)) return 1;
 		start = start -> next;
@@ -572,55 +585,43 @@ int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
 	return 0;
 }
 
-size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str);
-
 size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
     if (!compiledPattern || !str || !*str) return 0U;
-    if (compiledPattern -> primaryChar == '.') {
-        printf("Inside a dot metachar!\n");
-    }
     size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
         max = strlen(*str);
     }
     if (!max) return 0;
-    size_t matchingCharCount = 0;
-    int lookahead;
-    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
-        if (compiledPattern -> primaryChar == '.') {
-            printf("lookahead for . with char %c: %d\n", (*str)[matchingCharCount], lookahead);
-            printf("lookahead char: %c against %c\n", compiledPattern -> next -> primaryChar, (*str)[matchingCharCount+1]);
+    while (max >= min) {
+        char *postincrement = *str + max;
+        if (cregex_compare_char_length(compiledPattern, *str, max)) {
+            if (!compiledPattern->next || cregex_match_pattern_char(compiledPattern->next, &postincrement)) {
+                *str += max;
+                return max;
+            }
         }
-        matchingCharCount++;
-        if (matchingCharCount == max) break;
+        max--;
     }
-    if (matchingCharCount < min) matchingCharCount = 0;
-    if (matchingCharCount > strlen(*str)) {
-        cregex_error("Characters match exceeds length of string");
-    }
-    *str += matchingCharCount;
-    if (compiledPattern -> primaryChar == '.') {
-        printf("exiting a dot metachar!\n");
-    }
-    return matchingCharCount;
+    return 0;
 }
 
-size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
-    if (!str || !compiledPattern) return 1;
-    RegexPatternChar *cursor = compiledPattern;
-    const char *start = str;
-    const char *saveptr = str;
-    while (cursor) {
-        size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
-        if (!currentMatchCount){
-            return 0U;
-        } else {
-            cursor = cursor -> next;
-        }
-    }
-    return ((uintptr_t)saveptr - (uintptr_t)start);
-}
+// size_t cregex_lookahead(RegexPatternChar *compiledPattern, const char *str) {
+//     if (!str || !compiledPattern) return 1;
+//     RegexPatternChar *cursor = compiledPattern;
+//     const char *start = str;
+//     const char *saveptr = str;
+//     while (cursor) {
+//         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
+//         if (!currentMatchCount){
+//             return 0U;
+//         } else {
+//             cursor = cursor -> next;
+//         }
+//     }
+//     return 1;
+// }
+
 RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
     if (!compiledPattern || !str) return (RegexContainer){0};
     RegexPatternChar *cursor = compiledPattern;
