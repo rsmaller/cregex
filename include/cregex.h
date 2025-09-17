@@ -588,7 +588,7 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
     if (!max) return 0;
     size_t matchingCharCount = 0;
     int lookahead;
-    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount]) && (lookahead = cregex_lookahead(compiledPattern->next, (*str)+matchingCharCount+1))) {
+    while ((*str)[matchingCharCount] && cregex_compare_single_char(compiledPattern, (*str)[matchingCharCount])) {
         if (compiledPattern -> primaryChar == '.') {
             printf("lookahead for . with char %c: %d\n", (*str)[matchingCharCount], lookahead);
             printf("lookahead char: %c against %c\n", compiledPattern -> next -> primaryChar, (*str)[matchingCharCount+1]);
