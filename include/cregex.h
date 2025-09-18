@@ -644,24 +644,26 @@ size_t cregex_match_alternation_char(RegexPatternChar *parent, const char **str)
     size_t result = 0;
     const char *strCopy = *str;
     size_t currentToAdd;
+    printf("Left side trying to match %c against %c\n", cursor -> primaryChar, *strCopy);
     while (cursor && ((currentToAdd = cregex_match_pattern_char(cursor, &strCopy)))) {
         printf("left side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
         result += currentToAdd;
         cursor = cursor -> next;
     }
     if (result) {
-        printf("Returning %zu from alternation func\n", result);
+        printf("Left returning %zu from alternation func\n", result);
         *str += result;
         return result;
     }
     cursor = parent -> altLeft;
     strCopy = *str;
+    printf("Right side trying to match %c against %c\n", cursor -> primaryChar, *strCopy);
     while (cursor && ((currentToAdd = cregex_match_pattern_char(cursor, &strCopy)))) {
         printf("Right side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
         result += currentToAdd;
         cursor = cursor -> next;
     }
-    printf("Returning %zu from alternation func\n", result);
+    printf("Right returning %zu from alternation func\n", result);
     *str += result;
     return result;
 }
@@ -706,7 +708,10 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
     while (cursor) {
         if (!*saveptr) break;
         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
-        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {cursor = cursor -> next; continue;}
+        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) && cursor != compiledPattern) {
+            cursor = cursor -> next;
+            continue;
+        }
         if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
             printf("Reset at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
             if (*(saveptr+1)) start = ++saveptr;
@@ -714,7 +719,6 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
             cursor = compiledPattern;
         } else {
             printf("Matched at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
-
             cursor = cursor -> next;
         }
     }
