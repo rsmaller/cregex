@@ -38,8 +38,8 @@ typedef struct RegexPatternChar {
     size_t charClassLength;
     struct RegexPatternChar *child;
     struct RegexPatternChar *next;
-    struct RegexPatternChar *altLeft;
     struct RegexPatternChar *altRight;
+    struct RegexPatternChar *altLeft;
     char charClassRangeMin;
     char charClassRangeMax;
 } RegexPatternChar;
@@ -338,21 +338,21 @@ void cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
 void cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *left, RegexPatternChar *right) {
     cregex_set_flag(&parent -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
     cregex_clear_flag(&parent -> flags, CREGEX_PATTERN_CAPTURE_GROUP);
-    parent -> altLeft = left;
-    parent -> altRight = right;
+    parent -> altRight = left;
+    parent -> altLeft = right;
     parent -> child = NULL;
     parent -> primaryChar = '|';
 }
 
 void cregex_adjust_alternation_group(RegexPatternChar *parent) {
-    RegexPatternChar *cursor = parent -> altLeft;
+    RegexPatternChar *cursor = parent -> altRight;
     void *toFree = NULL;
-    if (parent -> altLeft -> primaryChar == '|') {
-        toFree = parent -> altLeft;
-        parent -> altLeft = parent -> altLeft -> next;
+    if (parent -> altRight -> primaryChar == '|') {
+        toFree = parent -> altRight;
+        parent -> altRight = parent -> altRight -> next;
         free(toFree);
     }
-    cursor = parent -> altRight;
+    cursor = parent -> altLeft;
     while (cursor) {
         if (cursor -> next == toFree) {
             cursor -> next = NULL;
@@ -522,9 +522,9 @@ void cregex_print_compiled_pattern(const RegexPatternChar *head);
 
 void cregex_print_alternation_group(const RegexPatternChar *head) {
     printf("|||Alternation group: ");
-    cregex_print_compiled_pattern(head -> altLeft);
-    printf("OR ");
     cregex_print_compiled_pattern(head -> altRight);
+    printf("OR ");
+    cregex_print_compiled_pattern(head -> altLeft);
     printf("||| ");
 }
 
@@ -590,6 +590,12 @@ int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch);
 int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
     if (!patternChar || !toMatch) return 0;
     char matchAgainst = patternChar->primaryChar;
+    if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
+        return matchAgainst == toMatch;
+    }
+    if (cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
+        return cregex_compare_char_class(patternChar, toMatch);
+    }
     switch (matchAgainst) {
         case 'd':
              return cregex_is_numeric(toMatch); 
@@ -608,14 +614,8 @@ int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
         case '-':
             return toMatch <= patternChar -> charClassRangeMax && toMatch >= patternChar -> charClassRangeMin;
         default:
-            if (!cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
-            return matchAgainst == toMatch;
-            }
-            if (cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
-                return cregex_compare_char_class(patternChar, toMatch);
-            }
+            return 0;
     }
-    return 0;
 }
 
 int cregex_compare_char_length(RegexPatternChar *patternChar, const char *matchAgainst, size_t count) {
@@ -637,12 +637,51 @@ int cregex_compare_char_class(RegexPatternChar *classContainer, char toMatch) {
 	return 0;
 }
 
+size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str);
+
+size_t cregex_match_alternation_char(RegexPatternChar *parent, const char **str) {
+    RegexPatternChar *cursor = parent -> altRight;
+    size_t result = 0;
+    const char *strCopy = *str;
+    size_t currentToAdd;
+    while (cursor && ((currentToAdd = cregex_match_pattern_char(cursor, &strCopy)))) {
+        printf("left side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
+        result += currentToAdd;
+        cursor = cursor -> next;
+    }
+    if (result) {
+        printf("Returning %zu from alternation func\n", result);
+        *str += result;
+        return result;
+    }
+    cursor = parent -> altLeft;
+    strCopy = *str;
+    while (cursor && ((currentToAdd = cregex_match_pattern_char(cursor, &strCopy)))) {
+        printf("Right side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
+        result += currentToAdd;
+        cursor = cursor -> next;
+    }
+    printf("Returning %zu from alternation func\n", result);
+    *str += result;
+    return result;
+}
+
 size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
     if (!compiledPattern || !str || !*str) return 0U;
     size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
         max = strlen(*str);
+    }
+    if (cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
+        return cregex_match_alternation_char(compiledPattern, str);
+    }
+    if (max == 1) {
+        if (cregex_compare_single_char(compiledPattern, **str)) {
+            (*str)++;
+            return 1;
+        }
+        return 0;
     }
     while (max >= min) {
         const char *postincrement = *str + max;
@@ -667,13 +706,15 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
     while (cursor) {
         if (!*saveptr) break;
         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
-        if (!currentMatchCount) {
+        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {cursor = cursor -> next; continue;}
+        if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
             printf("Reset at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
         } else {
             printf("Matched at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
+
             cursor = cursor -> next;
         }
     }
