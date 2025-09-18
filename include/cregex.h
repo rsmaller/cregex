@@ -644,7 +644,6 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
     if (max > strlen(*str)) {
         max = strlen(*str);
     }
-    if (!max) return 0;
     while (max >= min) {
         const char *postincrement = *str + max;
         if (cregex_compare_char_length(compiledPattern, *str, max)) {
