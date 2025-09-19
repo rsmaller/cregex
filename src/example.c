@@ -10,7 +10,9 @@ int main() {
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = cregex_compile_pattern(mypattern);
     cregex_print_compiled_pattern_wrapper(pattern);
-    RegexContainer myMatch = cregex_match_to_string(pattern, saveptr);
-    cregex_print_match_container(myMatch);
+    RegexMatch myMatch = cregex_match_to_string(pattern, saveptr);
+    printf("Match:\n\t");
+    cregex_print_match(myMatch);
+    printf("\n");
     return 0;
 }

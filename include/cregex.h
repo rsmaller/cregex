@@ -675,7 +675,7 @@ size_t cregex_match_alternation_char(RegexPatternChar *parent, const char **str)
     *str += result;
     return result;
 }
-RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str);
+RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str);
 
 int cregex_match_lookahead(RegexPatternChar *compiledPattern, const char *str) {
     // if (!compiledPattern || !cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
@@ -726,11 +726,10 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
     return 0;
 }
 
-RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
-    if (!compiledPattern || !str) return (RegexContainer){0};
+RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str) {
+    if (!compiledPattern || !str) return (RegexMatch){0};
     RegexPatternChar *cursor = compiledPattern;
-    RegexMatch res = {0};
-    RegexContainer returnVal = {0, malloc(0)};
+    RegexMatch returnVal = {0};
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
@@ -755,10 +754,8 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
         }
 
     }
-    res.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
-    res.match = start;
-    returnVal.matches = realloc(returnVal.matches, ++returnVal.matchCount);
-    returnVal.matches[returnVal.matchCount-1] = res;
+    returnVal.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
+    returnVal.match = start;
     return returnVal;
 }
 
