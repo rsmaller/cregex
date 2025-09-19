@@ -675,13 +675,14 @@ size_t cregex_match_alternation_char(RegexPatternChar *parent, const char **str)
     *str += result;
     return result;
 }
+RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str);
 
 int cregex_match_lookahead(RegexPatternChar *compiledPattern, const char *str) {
-    if (!cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
-        return 1;
-    }
-    const char *saveptr = str;
-    
+    // if (!compiledPattern || !cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
+    //     return 1;
+    // }
+    // const char *saveptr = str;
+    // printf("Doing lookahead with string %s!\n", str);
     return 1;
 }
 
@@ -690,12 +691,14 @@ int cregex_match_lookbehind(RegexPatternChar *compiledPattern, const char *str) 
         return 1;
     }
     const char *saveptr = str;
-
     return 1;
 }
 
 size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char **str) {
     if (!compiledPattern || !str || !*str) return 0U;
+    if (cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND)) {
+        return 1U;
+    }
     size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
     if (max > strlen(*str)) {
@@ -731,6 +734,10 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
+        if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND)) {
+            cursor = cursor -> next;
+            continue;
+        }
         if (!*saveptr) break;
         size_t currentMatchCount = cregex_match_pattern_char(cursor, &saveptr);
         if (cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) && cursor != compiledPattern) {
@@ -738,15 +745,15 @@ RegexContainer cregex_match_to_string(RegexPatternChar *compiledPattern, const c
             continue;
         }
         if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
-            printf("Reset at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
+            printf("Reset at string %s because of either (count: %zu) with char %c (against %c)\n", saveptr, currentMatchCount, cursor -> primaryChar, *saveptr);
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
         } else {
-            printf("Matched at string %s because of either (count: %d) with char %c\n", saveptr, !currentMatchCount, cursor -> primaryChar);
+            printf("Matched at string %s because of either (count: %zu) with char %c\n", saveptr-currentMatchCount, currentMatchCount, cursor -> primaryChar);
             cursor = cursor -> next;
         }
-        if (cursor && cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND)) cursor = cursor -> next;
+
     }
     res.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
     res.match = start;
