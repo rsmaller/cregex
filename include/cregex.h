@@ -7,7 +7,7 @@
 #include <stdarg.h>
 
 //  Flag Macros
-#define CREGEX_FLAG_BIT(x)             (((uint64_t)1)<<(x))
+#define CREGEX_FLAG_BIT(x)                           (((uint64_t)1)<<(x))
 
 #define CREGEX_STATE_INSIDE_CHAR_CLASS               CREGEX_FLAG_BIT(0)
 #define CREGEX_STATE_ESCAPED_CHAR                    CREGEX_FLAG_BIT(1)
@@ -336,6 +336,8 @@ void cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
         }
         (*pattern)++;
     }
+    printf("End of cursor compilation char: %c\n", cursor -> primaryChar);
+    printf("End of cursor compilation char: %p -> %p\n", cursor, cursor -> next);
 }
 
 void cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *right, RegexPatternChar *left) {
@@ -606,7 +608,7 @@ int cregex_compare_single_char(RegexPatternChar *patternChar, char toMatch) {
     }
     switch (matchAgainst) {
         case 'd':
-             return cregex_is_numeric(toMatch); 
+             return cregex_is_numeric(toMatch);
         case 'D':
              return !cregex_is_numeric(toMatch);
         case 's':
@@ -675,15 +677,29 @@ size_t cregex_match_alternation_char(RegexPatternChar *parent, const char **str)
     *str += result;
     return result;
 }
+
 RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char *str);
 
 int cregex_match_lookahead(RegexPatternChar *compiledPattern, const char *str) {
-    // if (!compiledPattern || !cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
-    //     return 1;
-    // }
-    // const char *saveptr = str;
-    // printf("Doing lookahead with string %s!\n", str);
-    return 1;
+    int negativity;
+    if (cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_NEGATIVE_MATCH)) {
+        negativity = 1;
+    } else {
+        negativity = 0;
+    }
+    if (!compiledPattern || !cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
+        return 1;
+    }
+    compiledPattern = compiledPattern -> child;
+    int ret = 1;
+    while (compiledPattern) {
+        ret = cregex_match_pattern_char(compiledPattern, &str);
+        compiledPattern = compiledPattern -> next;
+    }
+    if (negativity) {
+        ret = !ret;
+    }
+    return ret;
 }
 
 int cregex_match_lookbehind(RegexPatternChar *compiledPattern, const char *str) {
@@ -712,9 +728,9 @@ size_t cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char *
         if (cregex_compare_char_length(compiledPattern, *str, max)) {
             int lookthru = 1;
             if (compiledPattern -> next && cregex_has_flag(&compiledPattern -> next -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
-                lookthru = cregex_match_lookahead(compiledPattern -> next, *str);
+                lookthru = cregex_match_lookahead(compiledPattern -> next, *str+1);
             } else if (compiledPattern -> prev && cregex_has_flag(&compiledPattern -> prev -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
-                lookthru = cregex_match_lookbehind(compiledPattern -> prev, *str);
+                lookthru = cregex_match_lookbehind(compiledPattern -> prev, *str+1);
             }
             if (lookthru && (!compiledPattern->next || cregex_match_pattern_char(compiledPattern->next, &postincrement))) {
                 *str += max;
