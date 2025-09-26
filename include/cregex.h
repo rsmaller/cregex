@@ -358,14 +358,13 @@ void cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *righ
 }
 
 void cregex_adjust_alternation_group(RegexPatternChar *parent) {
-    RegexPatternChar *cursor = parent -> altRight;
     void *toFree = NULL;
     if (parent -> altRight -> primaryChar == '|') {
         toFree = parent -> altRight;
         parent -> altRight = parent -> altRight -> next;
         free(toFree);
     }
-    cursor = parent -> altLeft;
+    RegexPatternChar *cursor = parent -> altLeft;
     while (cursor) {
         if (cursor -> next == toFree) {
             cursor -> next = NULL;
