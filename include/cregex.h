@@ -336,8 +336,8 @@ void cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
         }
         (*pattern)++;
     }
-    printf("End of cursor compilation char: %c\n", cursor -> primaryChar);
-    printf("End of cursor compilation char: %p -> %p\n", cursor, cursor -> next);
+    // printf("End of cursor compilation char: %c\n", cursor -> primaryChar);
+    // printf("End of cursor compilation char: %p -> %p\n", cursor, cursor -> next);
 }
 
 void cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *right, RegexPatternChar *left) {
@@ -760,12 +760,12 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
             continue;
         }
         if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
-            printf("Reset at string %s because of either (count: %zu) with char %c (against %c)\n", saveptr, currentMatchCount, cursor -> primaryChar, *saveptr);
+            // printf("Reset at string %s because of either (count: %zu) with char %c (against %c)\n", saveptr, currentMatchCount, cursor -> primaryChar, *saveptr);
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
         } else {
-            printf("Matched at string %s because of either (count: %zu) with char %c\n", saveptr-currentMatchCount, currentMatchCount, cursor -> primaryChar);
+            // printf("Matched at string %s because of either (count: %zu) with char %c\n", saveptr-currentMatchCount, currentMatchCount, cursor -> primaryChar);
             cursor = cursor -> next;
         }
 
@@ -784,4 +784,25 @@ void cregex_print_match_container(RegexContainer container) {
         cregex_print_match(container.matches[i]);
         printf(" (Length: %zu)\n", container.matches[i].matchLength);
     }
+}
+
+RegexContainer cregex_match(RegexPatternChar *compiledPattern, const char *str) {
+	RegexContainer ret = {.matchCount = 0, .matches = (RegexMatch *)malloc(0)};
+	const char * const strStart = str;
+	while (*str) {
+		RegexMatch currentMatch = cregex_match_to_string(compiledPattern, str);
+		if (currentMatch.matchLength) {
+			ret.matchCount++;
+			ret.matches = (RegexMatch *)realloc(ret.matches, ret.matchCount * sizeof(RegexMatch));
+			ret.matches[ret.matchCount - 1] = currentMatch;
+		    str = currentMatch.match + currentMatch.matchLength;
+		} else {
+		    str += 1;
+		}
+	}
+    if (!ret.matchCount) {
+        free(ret.matches);
+        ret.matches = NULL;
+    }
+	return ret;
 }
