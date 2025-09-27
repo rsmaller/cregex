@@ -708,7 +708,6 @@ size_t cregex_match_lookahead(RegexPatternChar *compiledPattern, const char * co
 }
 
 size_t cregex_match_lookbehind(RegexPatternChar *compiledPattern, const char * const strStart, const char *str) {
-    printf("Doing lookbehind! String is %s, looking behind at %s\n", strStart, str);
     if (!compiledPattern || !cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKBEHIND)) {
         return 1;
     }
