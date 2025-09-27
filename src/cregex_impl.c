@@ -268,7 +268,6 @@ static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, ch
         }
         cursor -> primaryChar = **pattern;
         if (**pattern == '[' && *(*pattern-1) != '\\')  {
-            printf("Going in code block with cursor char %c\n", cursor -> primaryChar);
             internal_cregex_compile_char_class(cursor, pattern);
         } else {
             cursor -> flags |= charType;
@@ -285,8 +284,6 @@ static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, ch
         }
         (*pattern)++;
     }
-    // printf("End of cursor compilation char: %c\n", cursor -> primaryChar);
-    // printf("End of cursor compilation char: %p -> %p\n", cursor, cursor -> next);
 }
 
 static void internal_cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *right, RegexPatternChar *left) {
@@ -587,26 +584,20 @@ static size_t internal_cregex_match_alternation_char(RegexPatternChar *parent, c
     size_t result = 0;
     const char *strCopy = *str;
     size_t currentToAdd;
-    printf("Left side trying to match %c against %c\n", cursor -> primaryChar, *strCopy);
     while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy, 0)))) {
-        printf("left side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
         result += currentToAdd;
         cursor = cursor -> next;
     }
     if (result) {
-        printf("Left returning %zu from alternation func\n", result);
         *str += result;
         return result;
     }
     cursor = parent -> altLeft;
     strCopy = *str;
-    printf("Right side trying to match %c against %c\n", cursor -> primaryChar, *strCopy);
     while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy, 0)))) {
-        printf("Right side trying to match %c against %c\n", cursor -> primaryChar, *(strCopy-currentToAdd));
         result += currentToAdd;
         cursor = cursor -> next;
     }
-    printf("Right returning %zu from alternation func\n", result);
     *str += result;
     return result;
 }
