@@ -645,12 +645,17 @@ static size_t internal_cregex_match_lookbehind(RegexPatternChar *compiledPattern
     }
     compiledPattern = compiledPattern -> child;
     size_t ret = 1;
-    while (compiledPattern -> next) {
-	    compiledPattern = compiledPattern -> next;
+    size_t lookbehindLength = 0;
+    RegexPatternChar *cursor = compiledPattern;
+    while (cursor) {
+        lookbehindLength++;
+	    cursor = cursor -> next;
     }
-    while (compiledPattern) {
-        ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &str, CREGEX_STATE_INSIDE_LOOKBEHIND);
-        compiledPattern = compiledPattern -> prev;
+    if (str - strStart < lookbehindLength) return 0U;
+    const char *strCursor = str - lookbehindLength;
+    while (compiledPattern && ret) {
+        ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &strCursor, CREGEX_STATE_INSIDE_LOOKBEHIND);
+        compiledPattern = compiledPattern -> next;
     }
     if (negativity) {
         ret = !ret;
@@ -676,18 +681,12 @@ static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPatte
         if (internal_cregex_compare_char_length(compiledPattern, *str, max)) {
             size_t lookthru = 1;
             if (compiledPattern -> next && internal_cregex_has_flag(&compiledPattern -> next -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
-                lookthru = internal_cregex_match_lookahead(compiledPattern -> next, strStart, *str+max);
+                lookthru = internal_cregex_match_lookahead(compiledPattern -> next, strStart, postincrement);
             } else if (compiledPattern -> prev && internal_cregex_has_flag(&compiledPattern -> prev -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
-                lookthru = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str-max);
+                lookthru = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
             }
             if (lookthru && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement, 0))) {
-                if (internal_cregex_has_flag(&flags, CREGEX_STATE_INSIDE_LOOKBEHIND) && *str - max >= strStart) {
-                    *str -= max;
-                } else if (internal_cregex_has_flag(&flags, CREGEX_STATE_INSIDE_LOOKBEHIND)) {
-                    *str = strStart;
-                } else {
-                    *str += max;
-                }
+                *str += max;
                 return max;
             }
         }
