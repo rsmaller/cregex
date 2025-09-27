@@ -71,6 +71,7 @@ dkms.conf
 /Testing
 /.cmake
 /.idea
+/bin
 /makefile
 /Makefile
 out*

@@ -1,13 +1,57 @@
+set(CREGEX_PROJECT_VERSION "1.0")
+set(CREGEX_PROJECT_REVISION "0")
 cmake_minimum_required(VERSION 3.11.0)
-project(cregex VERSION 1.0.0)
-add_executable(cregex src/example.c)
+project(exampleregex VERSION ${CREGEX_PROJECT_VERSION})
+project(cregex VERSION ${CREGEX_PROJECT_VERSION})
+add_executable(exampleregex example/example.c)
+target_include_directories(exampleregex PRIVATE ./include)
+set_target_properties(exampleregex PROPERTIES OUTPUT_NAME exampleregex)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_OUTP_DIR}/build)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+IF (Link STREQUAL "static")
+    add_library(cregex STATIC ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
+    target_compile_definitions(cregex PRIVATE CREGEX_STATIC)
+ELSE()
+    add_library(cregex SHARED ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
+ENDIF()
+
+
 target_include_directories(cregex PRIVATE ./include)
-set_target_properties(cregex PROPERTIES OUTPUT_NAME exampleregex)
+
 IF (Sanitize STREQUAL "address")
     IF (MSVC)
-        target_compile_options(cregex PRIVATE /fsanitize=address)
+        target_compile_options(exampleregex PRIVATE /fsanitize=address)
     ELSE()
-        target_compile_options(cregex PRIVATE -g -fsanitize=address -fno-omit-frame-pointer -O0)
-        target_link_options(cregex PRIVATE -fsanitize=address)
+        target_compile_options(exampleregex PRIVATE -g -fsanitize=address -fno-omit-frame-pointer -O0)
+        target_link_options(exampleregex PRIVATE -fsanitize=address)
     ENDIF()
 ENDIF()
+
+target_link_libraries(exampleregex cregex)
+
+# CMake Package Generator
+
+install(TARGETS cregex
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+        DESTINATION include/cregex/
+)
+
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Ryan Smaller")
+set(CPACK_PACKAGE_NAME "libcregex")
+set(CPACK_PACKAGE_VERSION ${CREGEX_PROJECT_VERSION}-${CREGEX_PROJECT_REVISION})
+set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_amd64)
+set(CPACK_PACKAGE_DESCRIPTION "A lightweight regex compiler and API written in C.")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
+set_target_properties(cregex PROPERTIES
+        VERSION ${CREGEX_PROJECT_VERSION}
+        SOVERSION 0
+)
+
+include(CPack)

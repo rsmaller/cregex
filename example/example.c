@@ -3,12 +3,12 @@
 
 int main() {
     char *mystr = "yes no maybe 617653462 abc";
-    char *mypattern = "(?<!6)\\d";
+    char *mypattern = "(?<!61)\\d";
     char *saveptr = mystr;
     printf("String is \"%s\"\n", mystr);
     printf("Pattern is \"%s\"\n", mypattern);
     RegexPatternChar *pattern = cregex_compile_pattern(mypattern);
-    cregex_print_compiled_pattern_wrapper(pattern);
+    cregex_print_compiled_pattern(pattern);
     RegexContainer myMatch = cregex_match(pattern, saveptr, CREGEX_PERMUTED_MATCHES);
     cregex_print_match_container(myMatch);
     printf("\n");
