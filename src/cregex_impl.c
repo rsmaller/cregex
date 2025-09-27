@@ -199,7 +199,7 @@ static void internal_cregex_compile_char_class(RegexPatternChar *patternToAdd, c
         }
         currentClassChar -> flags = charType;
         if (*(*pattern+1) == '-' && **pattern != '\\') {
-            internal_cregex_set_flag(&currentClassChar -> flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE);
+            internal_cregex_set_flag(&currentClassChar -> flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE | CREGEX_PATTERN_METACHARACTER);
             currentClassChar -> primaryChar = *(*pattern+1);
             currentClassChar -> charClassRangeMin = **pattern;
             currentClassChar -> charClassRangeMax = *(*pattern+2);
@@ -440,7 +440,7 @@ static void internal_cregex_print_pattern_char(RegexPatternChar patternChar) {
 static void internal_cregex_print_char_class(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> child;
     size_t len = head -> charClassLength;
-    printf("[[Char class: ");
+    printf("[[Char Class: ");
     for (size_t i = 0; i < len; i++) {
         internal_cregex_print_pattern_char(*cursor);
         cursor = cursor -> next;
@@ -450,7 +450,7 @@ static void internal_cregex_print_char_class(const RegexPatternChar *head) {
 
 static void internal_cregex_print_capture_group(const RegexPatternChar *head) {
     RegexPatternChar *cursor = head -> child;
-    printf("((Capture group: ");
+    printf("((Capture Group: ");
     while (cursor) {
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
             internal_cregex_print_char_class(cursor);
@@ -474,7 +474,7 @@ static void internal_cregex_print_lookahead(const RegexPatternChar *head) {
 }
 
 static void internal_cregex_print_alternation_group(const RegexPatternChar *head) {
-    printf("|||Alternation group: ");
+    printf("|||Alternation Group: ");
     cregex_print_compiled_pattern(head -> altRight);
     printf("OR ");
     cregex_print_compiled_pattern(head -> altLeft);
@@ -499,9 +499,7 @@ static void internal_cregex_print_compiled_pattern(const RegexPatternChar *head)
             } else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
                 printf("Lookbehind: ");
             }
-
             internal_cregex_print_lookahead(head);
-
         } else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
             printf("(((Dummy: ");
             internal_cregex_print_lookahead(head);
@@ -744,9 +742,9 @@ void cregex_print_match_container(RegexContainer container) {
     printf("\tMatch Count: %zu\n", container.matchCount);
     printf("\tMatches:\n");
     for (size_t i = 0; i < container.matchCount; i++) {
-        printf("\t\t");
+        printf("\t\t\"");
         cregex_print_match(container.matches[i]);
-        printf(" (Length: %zu)\n", container.matches[i].matchLength);
+        printf("\" (Length: %zu)\n", container.matches[i].matchLength);
     }
 }
 

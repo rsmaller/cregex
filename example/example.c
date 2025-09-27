@@ -3,7 +3,7 @@
 
 int main() {
     char *mystr = "yes no maybe 617653462 abc";
-    char *mypattern = "\\d(1|5)";
+    char *mypattern = "(?<!6)[0-9]{4} ";
     char *saveptr = mystr;
     printf("String is \"%s\"\n", mystr);
     printf("Pattern is \"%s\"\n", mypattern);
