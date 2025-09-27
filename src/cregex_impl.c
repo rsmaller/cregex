@@ -681,8 +681,10 @@ static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPatte
                 lookthru = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str-max);
             }
             if (lookthru && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement, 0))) {
-                if (internal_cregex_has_flag(&flags, CREGEX_STATE_INSIDE_LOOKBEHIND)) {
+                if (internal_cregex_has_flag(&flags, CREGEX_STATE_INSIDE_LOOKBEHIND) && *str - max >= strStart) {
                     *str -= max;
+                } else if (internal_cregex_has_flag(&flags, CREGEX_STATE_INSIDE_LOOKBEHIND)) {
+                    *str = strStart;
                 } else {
                     *str += max;
                 }
