@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "cregex.h"
 
-int main() {
+int main(void) {
     char *myStr = "yes no maybe 617653462 abc";
     char *myPattern = "m(ay)(be)";
     printf("String is \"%s\"\n", myStr);

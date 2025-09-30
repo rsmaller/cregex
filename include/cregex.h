@@ -6,6 +6,7 @@
     #define CREGEX_H
 #endif
 #include <stdint.h>
+#include <stddef.h>
 
 typedef uint64_t RegexFlag;
 
