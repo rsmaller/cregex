@@ -2,26 +2,7 @@
 //  SECTION: Includes and Type Definitions
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #pragma once
-#include <stddef.h>
 #include <stdint.h>
-
-#if defined(_MSC_VER) && !defined(CREGEX_STATIC)
-    #define CREGEX_EXPORT      __declspec(dllexport)
-    #define CREGEX_IMPL_EXPORT __declspec(dllexport)
-    #define CREGEX_IMPORT      __declspec(dllimport)
-#elif defined(_MSC_VER)
-    #define CREGEX_EXPORT extern
-    #define CREGEX_IMPL_EXPORT
-    #define CREGEX_IMPORT
-#elif !defined(CREGEX_STATIC)
-    #define CREGEX_EXPORT
-    #define CREGEX_IMPL_EXPORT
-    #define CREGEX_IMPORT
-#else
-    #define CREGEX_EXPORT extern
-    #define CREGEX_IMPL_EXPORT extern
-    #define CREGEX_IMPORT
-#endif
 
 typedef uint64_t RegexFlag;
 
@@ -86,6 +67,28 @@ typedef struct RegexContainer {
 #define CREGEX_INF_COUNT SIZE_MAX
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  SECTION: Implementation and Linking Macros
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#if defined(_MSC_VER) && !defined(CREGEX_STATIC)
+    #define CREGEX_EXPORT      __declspec(dllexport)
+    #define CREGEX_IMPL_EXPORT __declspec(dllexport)
+    #define CREGEX_IMPORT      __declspec(dllimport)
+#elif defined(_MSC_VER)
+    #define CREGEX_EXPORT extern
+    #define CREGEX_IMPL_EXPORT
+    #define CREGEX_IMPORT
+#elif !defined(CREGEX_STATIC)
+    #define CREGEX_EXPORT
+    #define CREGEX_IMPL_EXPORT
+    #define CREGEX_IMPORT
+#else
+    #define CREGEX_EXPORT extern
+    #define CREGEX_IMPL_EXPORT extern
+    #define CREGEX_IMPORT
+#endif
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: User-Facing Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -95,7 +98,7 @@ CREGEX_EXPORT RegexMatch     cregex_match_to_string(RegexPatternChar *compiledPa
 CREGEX_EXPORT RegexContainer cregex_match          (RegexPatternChar *compiledPattern, const char *str, RegexFlag flags);
 
 CREGEX_EXPORT void cregex_print_match_container  (RegexContainer container);
-CREGEX_EXPORT void cregex_print_compiled_pattern (RegexPatternChar *head);
+CREGEX_EXPORT void cregex_print_compiled_pattern (const RegexPatternChar *head);
 CREGEX_EXPORT void cregex_print_match            (RegexMatch match);
 CREGEX_EXPORT void cregex_print_match_with_groups(RegexMatch match);
 
@@ -140,8 +143,8 @@ static int internal_cregex_compare_single_char(RegexPatternChar *patternChar, ch
 static int internal_cregex_compare_char_length(RegexPatternChar *patternChar, const char *matchAgainst, size_t count);
 static int internal_cregex_compare_char_class (RegexPatternChar *classContainer, char toMatch);
 
-static size_t internal_cregex_match_alternation_char  (RegexPatternChar *parent, const char *strStart, const char **str);
-static size_t internal_cregex_match_capture_group_char(RegexPatternChar *parent, const char *strStart, const char **str);
+static size_t internal_cregex_match_alternation_char  (const RegexPatternChar *parent, const char *strStart, const char **str);
+static size_t internal_cregex_match_capture_group_char(const RegexPatternChar *parent, const char *strStart, const char **str);
 static size_t internal_cregex_match_lookahead         (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 static size_t internal_cregex_match_lookbehind        (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 static size_t internal_cregex_match_pattern_char      (RegexPatternChar *compiledPattern, const char *strStart, const char **str, RegexFlag flags);
