@@ -600,6 +600,21 @@ static size_t internal_cregex_match_alternation_char(RegexPatternChar *parent, c
     return result;
 }
 
+static size_t internal_cregex_match_capture_group_char(RegexPatternChar *parent, const char * const strStart, const char **str) {
+    RegexPatternChar *cursor = parent -> child;
+    size_t result = 0;
+    const char *strCopy = *str;
+    size_t currentToAdd;
+    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy, 0)))) {
+        result += currentToAdd;
+        cursor = cursor -> next;
+    }
+    if (result) {
+        *str += result;
+    }
+    return result;
+}
+
 static size_t internal_cregex_match_lookahead(RegexPatternChar *compiledPattern, const char * const strStart, const char *str) {
     int negativity;
     if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_NEGATIVE_MATCH)) {
@@ -665,6 +680,9 @@ static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPatte
     if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
         return internal_cregex_match_alternation_char(compiledPattern, strStart, str);
     }
+    if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
+        return internal_cregex_match_capture_group_char(compiledPattern, strStart, str);
+    }
     while (max >= min) {
         const char *postincrement = *str + max;
         if (internal_cregex_compare_char_length(compiledPattern, *str, max)) {
@@ -688,6 +706,7 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
     if (!compiledPattern || !str) return (RegexMatch){0};
     RegexPatternChar *cursor = compiledPattern;
     RegexMatch returnVal = {0};
+    returnVal.groups = malloc(0);
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
@@ -696,6 +715,21 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
             continue;
         }
         if (!*saveptr) break;
+        if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
+            const char *temp = saveptr;
+            size_t captureGroupMatchCount = internal_cregex_match_capture_group_char(cursor, strStart, &temp);
+            if (!captureGroupMatchCount) {
+                continue;
+            }
+            returnVal.groups = (RegexMatch *)realloc(returnVal.groups, ++returnVal.groupCount * sizeof(RegexMatch));
+            if (!returnVal.groups) {
+                internal_cregex_error("Group match reallocation failed. Exiting");
+            }
+            returnVal.groups[returnVal.groupCount - 1] = (RegexMatch){captureGroupMatchCount, saveptr, 0, NULL};
+            saveptr = temp;
+            cursor = cursor -> next;
+            continue;
+        }
         size_t currentMatchCount = internal_cregex_match_pattern_char(cursor, strStart, &saveptr, 0);
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) && cursor != compiledPattern) {
             cursor = cursor -> next;
@@ -755,4 +789,15 @@ void cregex_print_compiled_pattern(RegexPatternChar *head) {
 
 void cregex_print_match(const RegexMatch match) {
     printf("%.*s", (int)match.matchLength, match.match);
+}
+
+void cregex_print_match_with_groups(const RegexMatch match) {
+    cregex_print_match(match);
+    if (match.groupCount) {
+        printf("\nGroups:\n\t");
+        for (size_t i = 0; i < match.groupCount; i++) {
+            cregex_print_match(match.groups[i]);
+            printf("\n\t");
+        }
+    }
 }

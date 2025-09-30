@@ -36,6 +36,7 @@ typedef struct RegexPatternChar {
     struct RegexPatternChar *prev;
     struct RegexPatternChar *altRight;
     struct RegexPatternChar *altLeft;
+
     char charClassRangeMin;
     char charClassRangeMax;
 } RegexPatternChar;
@@ -43,6 +44,8 @@ typedef struct RegexPatternChar {
 typedef struct RegexMatch {
     size_t matchLength;
     const char *match;
+    size_t groupCount;
+    struct RegexMatch *groups;
 } RegexMatch;
 
 typedef struct RegexContainer {
@@ -91,9 +94,10 @@ CREGEX_EXPORT RegexPatternChar *cregex_compile_pattern(char *pattern);
 CREGEX_EXPORT RegexMatch     cregex_match_to_string(RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 CREGEX_EXPORT RegexContainer cregex_match          (RegexPatternChar *compiledPattern, const char *str, RegexFlag flags);
 
-CREGEX_EXPORT void cregex_print_match_container (RegexContainer container);
-CREGEX_EXPORT void cregex_print_compiled_pattern(RegexPatternChar *head);
-CREGEX_EXPORT void cregex_print_match           (RegexMatch match);
+CREGEX_EXPORT void cregex_print_match_container  (RegexContainer container);
+CREGEX_EXPORT void cregex_print_compiled_pattern (RegexPatternChar *head);
+CREGEX_EXPORT void cregex_print_match            (RegexMatch match);
+CREGEX_EXPORT void cregex_print_match_with_groups(RegexMatch match);
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: Internal Function Prototypes
@@ -106,8 +110,8 @@ static void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag)
 static void      internal_cregex_toggle_flag(RegexFlag *toCheck, RegexFlag flag);
 static RegexFlag internal_cregex_has_flag   (const RegexFlag *toCheck, RegexFlag flag);
 
-static RegexFlag internal_cregex_get_non_escaped_char_type(char toCheck);
-static RegexFlag internal_cregex_get_char_class_char_type(char toCheck);
+static RegexFlag internal_cregex_get_non_escaped_char_type  (char toCheck);
+static RegexFlag internal_cregex_get_char_class_char_type   (char toCheck);
 static RegexFlag internal_cregex_get_capture_group_char_type(char toCheck);
 
 static void internal_cregex_set_char_count_generic     (char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
@@ -136,7 +140,8 @@ static int internal_cregex_compare_single_char(RegexPatternChar *patternChar, ch
 static int internal_cregex_compare_char_length(RegexPatternChar *patternChar, const char *matchAgainst, size_t count);
 static int internal_cregex_compare_char_class (RegexPatternChar *classContainer, char toMatch);
 
-static size_t internal_cregex_match_alternation_char(RegexPatternChar *parent, const char * strStart, const char **str);
-static size_t internal_cregex_match_lookahead       (RegexPatternChar *compiledPattern, const char * strStart, const char *str);
-static size_t internal_cregex_match_lookbehind      (RegexPatternChar *compiledPattern, const char * strStart, const char *str);
-static size_t internal_cregex_match_pattern_char    (RegexPatternChar *compiledPattern, const char * strStart, const char **str, RegexFlag flags);
+static size_t internal_cregex_match_alternation_char  (RegexPatternChar *parent, const char *strStart, const char **str);
+static size_t internal_cregex_match_capture_group_char(RegexPatternChar *parent, const char *strStart, const char **str);
+static size_t internal_cregex_match_lookahead         (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
+static size_t internal_cregex_match_lookbehind        (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
+static size_t internal_cregex_match_pattern_char      (RegexPatternChar *compiledPattern, const char *strStart, const char **str, RegexFlag flags);
