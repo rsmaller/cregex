@@ -3,8 +3,7 @@
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #pragma once
 #ifndef CREGEX_H
-    #define CREGEX_H
-#endif
+#define CREGEX_H
 #include <stdint.h>
 #include <stddef.h>
 
@@ -101,8 +100,9 @@ CREGEX_EXPORT RegexPatternChar *cregex_compile_pattern(char *pattern);
 CREGEX_EXPORT RegexMatch     cregex_match_to_string(RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 CREGEX_EXPORT RegexContainer cregex_match          (RegexPatternChar *compiledPattern, const char *str, RegexFlag flags);
 
-CREGEX_EXPORT void cregex_print_match_container  (RegexContainer container);
 CREGEX_EXPORT void cregex_print_compiled_pattern (const RegexPatternChar *head);
 CREGEX_EXPORT void cregex_print_match            (RegexMatch match);
 CREGEX_EXPORT void cregex_print_match_with_groups(RegexMatch match);
+CREGEX_EXPORT void cregex_print_match_container  (RegexContainer container);
 
+#endif // CREGEX_H
