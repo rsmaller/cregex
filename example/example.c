@@ -2,8 +2,8 @@
 #include "cregex.h"
 
 int main(void) {
-    char *myStr = "yes no maybe 617653462 abc";
-    char *myPattern = "(?<=\\w{3}) \\d{3}";
+    char *myStr = "ayes no maybe 617653462 abc" ;
+    char *myPattern = "a(\\w{3}) \\d{3}";
     printf("String is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
     RegexPatternChar *pattern = cregex_compile_pattern(myPattern);

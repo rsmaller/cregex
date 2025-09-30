@@ -269,6 +269,9 @@ static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, ch
         }
         (*pattern)++;
     }
+    if (**pattern != ')') {
+        internal_cregex_compile_error("Lookbehind/lookahead not properly terminated");
+    }
 }
 
 static void internal_cregex_compile_alternation(RegexPatternChar *parent, RegexPatternChar *right, RegexPatternChar *left) {
@@ -351,6 +354,9 @@ static void internal_cregex_compile_capture_group(RegexPatternChar *patternToAdd
     }
     if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_ALTERNATION_GROUP)) {
         internal_cregex_adjust_alternation_group(patternToAdd);
+    }
+    if (**pattern != ')') {
+        internal_cregex_compile_error("Capture group not properly terminated: %c", **pattern);
     }
 }
 
@@ -705,8 +711,16 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
         if (!*saveptr) break;
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = saveptr;
+            printf("match started at %s\n", temp);
             size_t captureGroupMatchCount = internal_cregex_match_capture_group_char(cursor, strStart, &temp);
+            printf("match finished at %s\n", temp);
             if (!captureGroupMatchCount) {
+                printf("match failed at %s\n", temp);
+                cursor = compiledPattern;
+                free(returnVal.groups);
+                returnVal.groups = NULL;
+                returnVal.groupCount = 0;
+                saveptr++;
                 continue;
             }
             RegexMatch *groupReallocation = (RegexMatch *)realloc(returnVal.groups, ++returnVal.groupCount * sizeof(RegexMatch));
@@ -730,6 +744,9 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
+            free(returnVal.groups);
+            returnVal.groups = NULL;
+            returnVal.groupCount = 0;
         } else {
             cursor = cursor -> next;
         }
