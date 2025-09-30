@@ -18,7 +18,7 @@
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_USED_FUNCTION static void internal_cregex_error(const char *msg, ...);
+CREGEX_USED_FUNCTION static void internal_cregex_compile_error(const char *msg, ...);
 
 CREGEX_USED_FUNCTION static void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
 CREGEX_USED_FUNCTION static void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
