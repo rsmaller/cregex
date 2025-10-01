@@ -61,7 +61,7 @@ static RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
     }
 }
 
-static RegexFlag internal_cregex_get_capture_group_char_type(const char toCheck) {
+static RegexFlag internal_cregex_get_capture_group_type(const char toCheck) {
     switch (toCheck) {
         case '.':
         case '{':
@@ -238,10 +238,10 @@ static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, ch
         if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
             break;
         }
-        RegexFlag charType = internal_cregex_get_capture_group_char_type(**pattern);
+        RegexFlag charType = internal_cregex_get_capture_group_type(**pattern);
         if (**pattern == '\\') {
             (*pattern)++;
-            charType = internal_cregex_get_capture_group_char_type(**pattern);
+            charType = internal_cregex_get_capture_group_type(**pattern);
             if (internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
                 internal_cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
             } else if (!internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
@@ -318,10 +318,10 @@ static void internal_cregex_compile_capture_group(RegexPatternChar *patternToAdd
         if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
             break;
         }
-        RegexFlag charType = internal_cregex_get_capture_group_char_type(**pattern);
+        RegexFlag charType = internal_cregex_get_capture_group_type(**pattern);
         if (**pattern == '\\') {
             (*pattern)++;
-            charType = internal_cregex_get_capture_group_char_type(**pattern);
+            charType = internal_cregex_get_capture_group_type(**pattern);
             if (internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
                 internal_cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
             } else if (!internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
@@ -569,7 +569,7 @@ static int internal_cregex_compare_char_class(RegexPatternChar *classContainer, 
 	return 0;
 }
 
-static size_t internal_cregex_match_alternation_char(const RegexPatternChar *parent, const char * const strStart, const char **str) { // NOLINT
+static size_t internal_cregex_match_alternation(const RegexPatternChar *parent, const char * const strStart, const char **str) { // NOLINT
     if (!parent) return 0U;
     RegexPatternChar *cursor = parent -> altRight;
     size_t result = 0;
@@ -593,7 +593,7 @@ static size_t internal_cregex_match_alternation_char(const RegexPatternChar *par
     return result;
 }
 
-static size_t internal_cregex_match_capture_group_char(const RegexPatternChar *parent, const char * const strStart, const char **str) { // NOLINT
+static size_t internal_cregex_match_capture_group(const RegexPatternChar *parent, const char * const strStart, const char **str) { // NOLINT
     if (!parent) return 0U;
     RegexPatternChar *cursor = parent -> child;
     size_t result = 0;
@@ -672,10 +672,10 @@ static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPatte
         max = strlen(*str);
     }
     if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
-        return internal_cregex_match_alternation_char(compiledPattern, strStart, str);
+        return internal_cregex_match_alternation(compiledPattern, strStart, str);
     }
     if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
-        return internal_cregex_match_capture_group_char(compiledPattern, strStart, str);
+        return internal_cregex_match_capture_group(compiledPattern, strStart, str);
     }
     while (max >= min) {
         const char *postincrement = *str + max;
@@ -712,17 +712,14 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = saveptr;
             printf("match started at %s\n", temp);
-            size_t captureGroupMatchCount = internal_cregex_match_capture_group_char(cursor, strStart, &temp);
+            size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
             printf("match finished at %s\n", temp);
-            if (!captureGroupMatchCount) {
-                printf("match failed at %s\n", temp);
-                cursor = compiledPattern;
-                free(returnVal.groups);
-                returnVal.groups = NULL;
-                returnVal.groupCount = 0;
+            if (!captureGroupMatchCount || (cursor -> next && !internal_cregex_match_pattern_char(cursor->next, strStart, &temp))) {
+                printf("match failed at %s\n\n", temp);
                 saveptr++;
                 continue;
             }
+            printf("\n");
             RegexMatch *groupReallocation = (RegexMatch *)realloc(returnVal.groups, ++returnVal.groupCount * sizeof(RegexMatch));
             if (groupReallocation) {
                 returnVal.groups = groupReallocation;
@@ -731,8 +728,11 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
                 internal_cregex_compile_error("Group match reallocation failed. Exiting");
             }
             returnVal.groups[returnVal.groupCount - 1] = (RegexMatch){captureGroupMatchCount, saveptr, 0, NULL};
-            saveptr = temp;
-            cursor = cursor -> next;
+            if (cursor -> next) {
+                printf("Going to next node after group match\n");
+                cursor = cursor -> next;
+            }
+            else break;
             continue;
         }
         const size_t currentMatchCount = internal_cregex_match_pattern_char(cursor, strStart, &saveptr);
@@ -741,6 +741,7 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
             continue;
         }
         if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
+            printf("Match failed outside group\n\n");
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;

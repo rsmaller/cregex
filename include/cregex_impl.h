@@ -26,7 +26,7 @@ CREGEX_USED_FUNCTION static RegexFlag internal_cregex_has_flag   (const RegexFla
 
 CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_non_escaped_char_type  (char toCheck);
 CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_char_class_char_type   (char toCheck);
-CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_capture_group_char_type(char toCheck);
+CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_capture_group_type(char toCheck);
 
 CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_generic     (char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
 CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
@@ -54,11 +54,11 @@ CREGEX_USED_FUNCTION static int internal_cregex_compare_single_char(RegexPattern
 CREGEX_USED_FUNCTION static int internal_cregex_compare_char_length(RegexPatternChar *patternChar, const char *matchAgainst, size_t count);
 CREGEX_USED_FUNCTION static int internal_cregex_compare_char_class (RegexPatternChar *classContainer, char toMatch);
 
-CREGEX_USED_FUNCTION static size_t internal_cregex_match_alternation_char  (const RegexPatternChar *parent, const char *strStart, const char **str);
-CREGEX_USED_FUNCTION static size_t internal_cregex_match_capture_group_char(const RegexPatternChar *parent, const char *strStart, const char **str);
-CREGEX_USED_FUNCTION static size_t internal_cregex_match_pattern_char      (RegexPatternChar *compiledPattern, const char *strStart, const char **str);
-CREGEX_USED_FUNCTION static size_t internal_cregex_match_lookahead         (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
-CREGEX_USED_FUNCTION static size_t internal_cregex_match_lookbehind        (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
+CREGEX_USED_FUNCTION static size_t internal_cregex_match_alternation  (const RegexPatternChar *parent, const char *strStart, const char **str);
+CREGEX_USED_FUNCTION static size_t internal_cregex_match_capture_group(const RegexPatternChar *parent, const char *strStart, const char **str);
+CREGEX_USED_FUNCTION static size_t internal_cregex_match_pattern_char (RegexPatternChar *compiledPattern, const char *strStart, const char **str);
+CREGEX_USED_FUNCTION static size_t internal_cregex_match_lookahead    (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
+CREGEX_USED_FUNCTION static size_t internal_cregex_match_lookbehind   (RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 
 #undef CREGEX_USED_FUNCTION
 #endif // CREGEX_IMPL_H
