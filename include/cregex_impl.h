@@ -28,15 +28,15 @@ CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_non_escaped_char_type 
 CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_char_class_char_type   (char toCheck);
 CREGEX_USED_FUNCTION static RegexFlag internal_cregex_get_capture_group_type(char toCheck);
 
-CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_generic     (char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
-CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
+CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_generic     (const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
+CREGEX_USED_FUNCTION static void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
 
-CREGEX_USED_FUNCTION static void             internal_cregex_compile_char_class      (RegexPatternChar *patternToAdd, char **pattern);
-CREGEX_USED_FUNCTION static void             internal_cregex_compile_lookahead       (RegexPatternChar *patternToAdd, char **pattern);
+CREGEX_USED_FUNCTION static void             internal_cregex_compile_char_class      (RegexPatternChar *patternToAdd, const char **pattern);
+CREGEX_USED_FUNCTION static void             internal_cregex_compile_lookahead       (RegexPatternChar *patternToAdd, const char **pattern);
 CREGEX_USED_FUNCTION static void             internal_cregex_compile_alternation     (RegexPatternChar *parent, RegexPatternChar *right, RegexPatternChar *left);
-CREGEX_USED_FUNCTION static void             internal_cregex_compile_capture_group   (RegexPatternChar *patternToAdd, char **pattern);
+CREGEX_USED_FUNCTION static void             internal_cregex_compile_capture_group   (RegexPatternChar *patternToAdd, const char **pattern);
 CREGEX_USED_FUNCTION static void             internal_cregex_adjust_alternation_group(RegexPatternChar *parent);
-CREGEX_USED_FUNCTION static RegexPatternChar internal_cregex_fetch_current_char_incr (char **str);
+CREGEX_USED_FUNCTION static RegexPatternChar internal_cregex_fetch_current_char_incr (const char **str);
 
 CREGEX_USED_FUNCTION static void internal_cregex_print_pattern_char     (RegexPatternChar patternChar);
 CREGEX_USED_FUNCTION static void internal_cregex_print_char_class       (const RegexPatternChar *head);

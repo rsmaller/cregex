@@ -95,7 +95,7 @@ typedef struct RegexContainer {
 //  SECTION: User-Facing Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_EXPORT RegexPatternChar *cregex_compile_pattern(char *pattern);
+CREGEX_EXPORT RegexPatternChar *cregex_compile_pattern(const char *pattern);
 
 CREGEX_EXPORT RegexMatch     cregex_match_to_string(RegexPatternChar *compiledPattern, const char *strStart, const char *str);
 CREGEX_EXPORT RegexContainer cregex_match          (RegexPatternChar *compiledPattern, const char *str, RegexFlag flags);

@@ -1,9 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "cregex.h"
 
-int main(void) {
-    char *myStr = "ayes no maybe 617653462 abc" ;
-    char *myPattern = "(\\w{3})";
+int main(const int argc, const char **argv) {
+    if (argc < 2) {
+        printf("Usage: %s <pattern>\n", argv[0]);
+        exit(0);
+    }
+    const char *myStr = "ayes no maybe 617653462 abc" ;
+    const char *myPattern = argv[1];
     printf("String is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
     RegexPatternChar *pattern = cregex_compile_pattern(myPattern);

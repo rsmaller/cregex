@@ -78,7 +78,7 @@ static RegexFlag internal_cregex_get_capture_group_type(const char toCheck) {
     }
 }
 
-static void internal_cregex_set_char_count_generic(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
+static void internal_cregex_set_char_count_generic(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     if (**str == '?') {
         *minInstanceCount = 0;
         *maxInstanceCount = 1;
@@ -114,7 +114,7 @@ static void internal_cregex_set_char_count_generic(char **str, size_t *minInstan
     }
 }
 
-static void internal_cregex_set_char_count_in_container(char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
+static void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
     const char toCheck = *(*str+1);
     if (toCheck == '?') {
         *minInstanceCount = 0;
@@ -150,7 +150,7 @@ static void internal_cregex_set_char_count_in_container(char **str, size_t *minI
     }
 }
 
-static void internal_cregex_compile_char_class(RegexPatternChar *patternToAdd, char **pattern) {
+static void internal_cregex_compile_char_class(RegexPatternChar *patternToAdd, const char **pattern) {
     const char * const patternStart = *pattern;
     internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_METACHARACTER_CLASS);
     size_t charClassLength = 0;
@@ -206,7 +206,7 @@ static void internal_cregex_compile_char_class(RegexPatternChar *patternToAdd, c
     patternToAdd -> charClassLength = charClassLength;
 }
 
-static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, char **pattern) {
+static void internal_cregex_compile_lookahead(RegexPatternChar *patternToAdd, const char **pattern) {
     const char * const patternStart = *pattern;
     RegexFlag state = 0;
     (*pattern)++;
@@ -303,7 +303,7 @@ static void internal_cregex_adjust_alternation_group(RegexPatternChar *parent) {
     }
 }
 
-static void internal_cregex_compile_capture_group(RegexPatternChar *patternToAdd, char **pattern) {
+static void internal_cregex_compile_capture_group(RegexPatternChar *patternToAdd, const char **pattern) {
     const char * const patternStart = *pattern;
     RegexFlag state = 0;
     internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_CAPTURE_GROUP);
@@ -360,7 +360,7 @@ static void internal_cregex_compile_capture_group(RegexPatternChar *patternToAdd
     }
 }
 
-static RegexPatternChar internal_cregex_fetch_current_char_incr(char **str) {
+static RegexPatternChar internal_cregex_fetch_current_char_incr(const char **str) {
     RegexPatternChar ret = {0};
     RegexFlag state = 0;
     if (**str == '\\') {
@@ -403,7 +403,7 @@ static RegexPatternChar internal_cregex_fetch_current_char_incr(char **str) {
     return ret;
 }
 
-RegexPatternChar *cregex_compile_pattern(char *pattern) {
+RegexPatternChar *cregex_compile_pattern(const char *pattern) {
     RegexPatternChar *ret = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));
     RegexPatternChar *cursor = ret;
     *ret = internal_cregex_fetch_current_char_incr(&pattern);
@@ -667,7 +667,6 @@ static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPatte
         return internal_cregex_match_lookahead(compiledPattern, strStart, *str);
     }
     if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
-        printf("Doing lookbehind\n");
         return internal_cregex_match_lookbehind(compiledPattern, strStart, *str);
     }
     const size_t min = compiledPattern -> minInstanceCount;
@@ -715,12 +714,8 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
         if (!*saveptr) break;
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = saveptr;
-            // const char *startOfGroup = temp;
-            printf("match started at %s\n", temp);
             size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
-            printf("match finished at %s\n", temp);
             if (!captureGroupMatchCount || (cursor -> next && !internal_cregex_match_pattern_char(cursor->next, strStart, &temp))) {
-                printf("match failed at %s\n\n", temp);
                 saveptr++;
                 cursor = compiledPattern;
                 start = saveptr;
@@ -729,7 +724,6 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
                 returnVal.groupCount = 0;
                 continue;
             }
-            printf("\n");
             RegexMatch *groupReallocation = (RegexMatch *)realloc(returnVal.groups, ++returnVal.groupCount * sizeof(RegexMatch));
             if (groupReallocation) {
                 returnVal.groups = groupReallocation;
@@ -751,7 +745,6 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
             continue;
         }
         if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
-            printf("Match failed outside group\n\n");
             if (*(saveptr+1)) start = ++saveptr;
             else break;
             cursor = compiledPattern;
@@ -820,10 +813,11 @@ void cregex_print_match(const RegexMatch match) {
 void cregex_print_match_with_groups(const RegexMatch match) {
     cregex_print_match(match);
     if (match.groupCount) {
-        printf("\nGroups:\n\t");
+        printf("\nGroups:");
         for (size_t i = 0; i < match.groupCount; i++) {
-            cregex_print_match(match.groups[i]);
             printf("\n\t");
+            cregex_print_match(match.groups[i]);
         }
     }
+    printf("\n");
 }
