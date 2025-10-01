@@ -811,12 +811,16 @@ void cregex_print_match(const RegexMatch match) {
 }
 
 void cregex_print_match_with_groups(const RegexMatch match) {
+    printf("\"");
     cregex_print_match(match);
+    printf("\"");
     if (match.groupCount) {
         printf("\nGroups:");
         for (size_t i = 0; i < match.groupCount; i++) {
             printf("\n\t");
+            printf("\"");
             cregex_print_match(match.groups[i]);
+            printf("\"");
         }
     }
     printf("\n");
