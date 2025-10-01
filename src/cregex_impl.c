@@ -663,8 +663,12 @@ static size_t internal_cregex_match_lookbehind(RegexPatternChar *compiledPattern
 
 static size_t internal_cregex_match_pattern_char(RegexPatternChar *compiledPattern, const char * const strStart, const char **str) { // NOLINT
     if (!compiledPattern || !str || !*str) return 0U;
-    if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND)) {
-        return 1U;
+    if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
+        return internal_cregex_match_lookahead(compiledPattern, strStart, *str);
+    }
+    if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
+        printf("Doing lookbehind\n");
+        return internal_cregex_match_lookbehind(compiledPattern, strStart, *str);
     }
     const size_t min = compiledPattern -> minInstanceCount;
     size_t max = compiledPattern -> maxInstanceCount;
@@ -711,12 +715,18 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
         if (!*saveptr) break;
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = saveptr;
+            // const char *startOfGroup = temp;
             printf("match started at %s\n", temp);
             size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
             printf("match finished at %s\n", temp);
             if (!captureGroupMatchCount || (cursor -> next && !internal_cregex_match_pattern_char(cursor->next, strStart, &temp))) {
                 printf("match failed at %s\n\n", temp);
                 saveptr++;
+                cursor = compiledPattern;
+                start = saveptr;
+                free(returnVal.groups);
+                returnVal.groups = NULL;
+                returnVal.groupCount = 0;
                 continue;
             }
             printf("\n");
@@ -728,8 +738,8 @@ RegexMatch cregex_match_to_string(RegexPatternChar *compiledPattern, const char 
                 internal_cregex_compile_error("Group match reallocation failed. Exiting");
             }
             returnVal.groups[returnVal.groupCount - 1] = (RegexMatch){captureGroupMatchCount, saveptr, 0, NULL};
+            saveptr += captureGroupMatchCount;
             if (cursor -> next) {
-                printf("Going to next node after group match\n");
                 cursor = cursor -> next;
             }
             else break;
