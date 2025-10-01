@@ -11,8 +11,6 @@ int main(void) {
     RegexMatch myMatch = cregex_match_to_string(pattern, myStr, myStr);
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
-    printf("Pointer: %p, pointer2: %p\n", myMatch.match, myMatch.groups[0].match);
-    printf("Length: %zu\n", myMatch.matchLength);
     printf("\n");
     return 0;
 }
