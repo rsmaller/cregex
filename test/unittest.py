@@ -14,7 +14,8 @@ testCases = [
     "aaaaaaa]",
     "a{aaaaa",
     "a}",
-    "{3}"
+    "{3}",
+    "\\w$"
 ]
 
 def fetch_executable():

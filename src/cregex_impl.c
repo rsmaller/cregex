@@ -668,6 +668,7 @@ static size_t internal_cregex_match_lookbehind(const RegexPattern *compiledPatte
 
 static size_t internal_cregex_match_pattern_char(const RegexPattern *compiledPattern, const char * const strStart, const char **str) { // NOLINT
     if (!compiledPattern || !str || !*str) return 0U;
+    if (compiledPattern -> primaryChar == '$' && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) return 1U;
     if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
         return internal_cregex_match_lookahead(compiledPattern, strStart, *str);
     }
@@ -743,6 +744,14 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
             }
             else break;
             continue;
+        }
+        if (cursor -> primaryChar == '$' && internal_cregex_has_flag(&cursor->flags, CREGEX_PATTERN_METACHARACTER) && *saveptr != '\0' && *saveptr != '\n') {
+            if (*(saveptr+1)) start = ++saveptr;
+            else break;
+            cursor = compiledPattern;
+            free(returnVal.groups);
+            returnVal.groups = NULL;
+            returnVal.groupCount = 0;
         }
         const size_t currentMatchCount = internal_cregex_match_pattern_char(cursor, strStart, &saveptr);
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) && cursor != compiledPattern) {
