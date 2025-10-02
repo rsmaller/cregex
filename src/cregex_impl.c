@@ -40,9 +40,6 @@ static RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
         case '[':
         case '{':
         case '(':
-        case ']':
-        case '}':
-        case ')':
             return CREGEX_PATTERN_METACHARACTER;
         default:
             return 0;
@@ -99,12 +96,13 @@ static void internal_cregex_set_char_count_generic(const char **str, size_t *min
         while (**str == ' ' || **str == ',') {
             (*str)++;
         }
-        if (!**str) {
+        if (!**str || *terminator != '}') {
             internal_cregex_compile_error("Length specifier not properly terminated!");
         }
         *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
         (*str)++;
+
     } else {
         *minInstanceCount = 1;
         *maxInstanceCount = 1;
@@ -402,6 +400,8 @@ static RegexPatternChar internal_cregex_fetch_current_char_incr(const char **str
     internal_cregex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
     return ret;
 }
+
+// WRITE VALIDATOR FUNCTION HERE
 
 RegexPatternChar *cregex_compile_pattern(const char *pattern) {
     RegexPatternChar *ret = (RegexPatternChar *)calloc(1, sizeof(RegexPatternChar));

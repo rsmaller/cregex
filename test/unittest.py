@@ -7,7 +7,14 @@ testCases = [
     "(\\w{3})",
     "[a-z]{2}",
     "\\d{2}",
-    "(\\w{3})( \\d{3})"
+    "(\\w{3})( \\d{3})",
+    "\\d{2}(?= )",
+    "(?<!a)\\w{2}",
+    "[aaaaaaaaa",
+    "aaaaaaa]",
+    "a{aaaaa",
+    "a}",
+    "{3}"
 ]
 
 def fetch_executable():
