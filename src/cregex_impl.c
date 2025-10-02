@@ -1,6 +1,7 @@
 #include <cregex.h>
 #define CREGEX_IMPL
 #include <cregex_impl.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -43,9 +44,11 @@ static RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
             return CREGEX_PATTERN_METACHARACTER;
         case '{':
             internal_cregex_compile_error("Number specifier encountered outside of meaningful token");
+            break;
         default:
             return 0;
     }
+    return 0;
 }
 
 static RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
@@ -423,7 +426,7 @@ static void internal_cregex_print_pattern_char(const RegexPattern patternChar) {
     if (!internal_cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS | CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND | CREGEX_PATTERN_ALTERNATION_GROUP)) {
         printf("\"%c\" ", patternChar.primaryChar);
     }
-    printf("(Flags: %llu, min: %zu, max: %zu", patternChar.flags, patternChar.minInstanceCount, patternChar.maxInstanceCount);
+    printf("(Flags: %" PRIu64 " , min: %zu, max: %zu", patternChar.flags, patternChar.minInstanceCount, patternChar.maxInstanceCount);
     if (internal_cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
         printf(" char min: %c, char max: %c", patternChar.charClassRangeMin, patternChar.charClassRangeMax);
     }

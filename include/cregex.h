@@ -45,17 +45,13 @@ typedef struct RegexMatchContainer {
     #define CREGEX_IMPL_EXPORT __declspec(dllexport)
     #define CREGEX_IMPORT      __declspec(dllimport)
 #elif defined(_MSC_VER)
-    #define CREGEX_EXPORT extern
-    #define CREGEX_IMPL_EXPORT
-    #define CREGEX_IMPORT
-#elif !defined(CREGEX_STATIC)
-    #define CREGEX_EXPORT
+    #define CREGEX_EXPORT      extern
     #define CREGEX_IMPL_EXPORT
     #define CREGEX_IMPORT
 #else
-    #define CREGEX_EXPORT extern
-    #define CREGEX_IMPL_EXPORT extern
-    #define CREGEX_IMPORT
+    #define CREGEX_EXPORT
+    #define CREGEX_IMPL_EXPORT
+    #define CREGEX_IMPORT      extern
 #endif
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
