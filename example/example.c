@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "cregex.h"
+#include <cregex.h>
 
 int main(const int argc, const char **argv) {
     if (argc < 2) {
@@ -11,9 +11,9 @@ int main(const int argc, const char **argv) {
     const char *myPattern = argv[1];
     printf("String is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
-    RegexPatternChar *pattern = cregex_compile_pattern(myPattern);
+    RegexPattern *pattern = cregex_compile_pattern(myPattern);
     cregex_print_compiled_pattern(pattern);
-    RegexMatch myMatch = cregex_match_to_string(pattern, myStr, myStr);
+    const RegexMatch myMatch = cregex_match_to_string(pattern, myStr, myStr);
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
     printf("\n");

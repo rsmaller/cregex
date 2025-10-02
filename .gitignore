@@ -76,5 +76,7 @@ dkms.conf
 /Makefile
 out*
 buildcmake
+
+# Python Environment and Build Files
 .venv
 /pyUnitTestBuild
