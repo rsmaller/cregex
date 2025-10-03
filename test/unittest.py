@@ -15,7 +15,8 @@ testCases = [
     "a{aaaaa",
     "a}",
     "{3}",
-    "\\w$"
+    "\\w$",
+    "\\w{2}$"
 ]
 
 def fetch_executable():
@@ -42,6 +43,7 @@ def fetch_executable():
 
 def test(executable, arg, outfile):
     os.system(executable + " \"" + arg + "\" >> " + outfile + " 2>&1")
+
 def main():
     example = fetch_executable()
     for pattern in testCases:

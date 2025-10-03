@@ -713,6 +713,21 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
     const char *start = str;
     const char *saveptr = str;
     while (cursor) {
+        if (cursor -> primaryChar == '$' && internal_cregex_has_flag(&cursor->flags, CREGEX_PATTERN_METACHARACTER) && *(saveptr+1) != '\0' && *(saveptr+1) != '\n') {
+            if (*(saveptr+1)) start = saveptr++;
+            else break;
+            cursor = compiledPattern;
+            free(returnVal.groups);
+            returnVal.groups = NULL;
+            returnVal.groupCount = 0;
+            continue;
+        }
+        if (cursor -> primaryChar == '$' && internal_cregex_has_flag(&cursor->flags, CREGEX_PATTERN_METACHARACTER)) {
+            cursor = cursor -> next;
+            start++;
+            saveptr++;
+            continue;
+        }
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND)) {
             cursor = cursor -> next;
             continue;
@@ -745,14 +760,6 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
             else break;
             continue;
         }
-        if (cursor -> primaryChar == '$' && internal_cregex_has_flag(&cursor->flags, CREGEX_PATTERN_METACHARACTER) && *saveptr != '\0' && *saveptr != '\n') {
-            if (*(saveptr+1)) start = ++saveptr;
-            else break;
-            cursor = compiledPattern;
-            free(returnVal.groups);
-            returnVal.groups = NULL;
-            returnVal.groupCount = 0;
-        }
         const size_t currentMatchCount = internal_cregex_match_pattern_char(cursor, strStart, &saveptr);
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) && cursor != compiledPattern) {
             cursor = cursor -> next;
@@ -768,7 +775,6 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
         } else {
             cursor = cursor -> next;
         }
-
     }
     returnVal.matchLength = (uintptr_t)saveptr - (uintptr_t)start;
     returnVal.match = start;
