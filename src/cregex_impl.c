@@ -732,7 +732,7 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
             cursor = cursor -> next;
             continue;
         }
-        if (!*saveptr) break;
+        // if (!*saveptr) break;
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = saveptr;
             size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);

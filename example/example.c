@@ -7,7 +7,7 @@ int main(const int argc, const char **argv) {
         printf("Usage: %s <pattern>\n", argv[0]);
         exit(0);
     }
-    const char *myStr = "ayes no maybe 617653462 abz" ;
+    const char *myStr = "ayes no maybe 617653462 abz\n" ;
     const char *myPattern = argv[1];
     printf("String is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
@@ -16,6 +16,7 @@ int main(const int argc, const char **argv) {
     const RegexMatch myMatch = cregex_match_to_string(pattern, myStr, myStr);
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
+    printf("Match length: %zu\n", myMatch.matchLength);
     printf("\n");
     return 0;
 }
