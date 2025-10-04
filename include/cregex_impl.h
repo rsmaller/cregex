@@ -65,9 +65,10 @@ struct RegexPattern {
 
 CREGEX_IMPL_FUNCTION void internal_cregex_compile_error(const char *msg, ...);
 
-CREGEX_IMPL_FUNCTION void      internal_cregex_set_flag  (RegexFlag *toCheck, RegexFlag flag);
-CREGEX_IMPL_FUNCTION void      internal_cregex_clear_flag(RegexFlag *toCheck, RegexFlag flag);
-CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_has_flag  (const RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNCTION void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNCTION void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNCTION void      internal_cregex_toggle_flag(RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_has_flag   (const RegexFlag *toCheck, RegexFlag flag);
 
 CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_get_non_escaped_char_type(char toCheck);
 CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_get_char_class_char_type (char toCheck);
