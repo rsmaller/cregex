@@ -367,6 +367,30 @@ static void internal_cregex_compile_capture_group(RegexPattern *patternToAdd, co
     }
 }
 
+static void internal_cregex_compile_end_anchor(RegexPattern *patternToAdd) {
+    internal_cregex_set_flag(&patternToAdd->flags, CREGEX_PATTERN_LOOKAHEAD);
+    patternToAdd -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+    RegexPattern *cursor = patternToAdd -> child;
+    cursor -> minInstanceCount = 1;
+    cursor -> maxInstanceCount = 1;
+    cursor -> charClassLength = 2;
+    internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS);
+    cursor -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+    cursor -> minInstanceCount = 1;
+    cursor = cursor -> child;
+    cursor -> minInstanceCount = 1;
+    cursor -> maxInstanceCount = 1;
+    cursor -> primaryChar = 'n';
+    internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER);
+    cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+    cursor -> next -> prev = cursor;
+    cursor = cursor -> next;
+    internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER);
+    cursor -> minInstanceCount = 1;
+    cursor -> maxInstanceCount = 1;
+    cursor -> primaryChar = '0';
+}
+
 static RegexPattern internal_cregex_fetch_current_char_incr(const char **str) {
     RegexPattern ret = {0};
     RegexFlag state = 0;
@@ -382,6 +406,9 @@ static RegexPattern internal_cregex_fetch_current_char_incr(const char **str) {
     }
     if (**str == '(' && *(*str+1) && *(*str+1) != '?' && !internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
         internal_cregex_set_flag(&state, CREGEX_STATE_INSIDE_CAPTURE_GROUP);
+    }
+    if (**str == '$' && !internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
+        internal_cregex_set_flag(&state, CREGEX_STATE_INSIDE_END_ANCHOR);
     }
     RegexFlag charType = internal_cregex_get_non_escaped_char_type(**str);
     if (!internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER) && internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
@@ -404,6 +431,9 @@ static RegexPattern internal_cregex_fetch_current_char_incr(const char **str) {
     }
     if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKAHEAD)) {
         internal_cregex_compile_lookahead(&ret, str);
+    }
+    if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_END_ANCHOR)) {
+        internal_cregex_compile_end_anchor(&ret);
     }
     (*str)++;
     internal_cregex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);

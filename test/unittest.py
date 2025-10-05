@@ -15,7 +15,8 @@ testCases = [
     "a{aaaaa",
     "a}",
     "{3}",
-    "\\w(?=[\\0\\n])"
+    "\\w(?=[\\0\\n])",
+    "\\w$"
 ]
 
 def fetch_executable():
