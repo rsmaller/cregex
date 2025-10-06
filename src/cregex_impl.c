@@ -113,7 +113,6 @@ static void internal_cregex_set_char_count_generic(const char **str, size_t *min
         *maxInstanceCount = strtoull(*str, &terminator, 10);
         *str = terminator;
         (*str)++;
-
     } else {
         *minInstanceCount = 1;
         *maxInstanceCount = 1;
@@ -560,7 +559,6 @@ static int internal_cregex_is_whitespace(const char toMatch) {
 
 static int internal_cregex_compare_single_char(const RegexPattern *patternChar, const char toMatch) { // NOLINT
     if (!patternChar) return 0;
-
     const char matchAgainst = patternChar->primaryChar;
     if (internal_cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
         return internal_cregex_compare_char_class(patternChar, toMatch);
@@ -803,7 +801,6 @@ RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const cha
                 endOfStringReturn.match = "\0";
                 return endOfStringReturn;
             }
-
         } else {
             cursor = cursor -> next;
         }
