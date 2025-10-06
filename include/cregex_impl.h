@@ -83,6 +83,7 @@ CREGEX_IMPL_FUNCTION void         internal_cregex_compile_lookahead       (Regex
 CREGEX_IMPL_FUNCTION void         internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
 CREGEX_IMPL_FUNCTION void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *right, RegexPattern *left);
 CREGEX_IMPL_FUNCTION void         internal_cregex_adjust_alternation_group(RegexPattern *parent);
+CREGEX_IMPL_FUNCTION void         internal_cregex_compile_end_anchor      (RegexPattern *patternToAdd)
 CREGEX_IMPL_FUNCTION RegexPattern internal_cregex_fetch_current_char_incr (const char **str);
 
 CREGEX_IMPL_FUNCTION void internal_cregex_print_char_class       (const RegexPattern *head);
