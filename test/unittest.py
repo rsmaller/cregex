@@ -4,23 +4,29 @@ import os, pathlib
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
-    "(\\w{3})",
-    "[a-z]{2}",
-    "\\d{2}",
-    "(\\w{3})( \\d{3})",
-    "(\\w{3})(?= )",
-    "\\d{2}(?= )",
-    "(?<!a)\\w{2}",
-    "[aaaaaaaaa",
-    "aaaaaaa]",
-    "a{aaaaa",
-    "a}",
-    "{3}",
-    "\\w(?=[\\0\\n])",
-    "\\w$",
-    "\\w\\$[\\n\\0]ajsfs",
-    "\\w (?=6)\\d{2}",
-    "\\d"
+    r"(\w{3})",
+    r"[a-z]{2}",
+    r"\d{2}",
+    r"(\w{3})( \d{3})",
+    r"(\w{3})(?= )",
+    r"\d{2}(?= )",
+    r"(?<!a)\w{2}",
+    r"[aaaaaaaaa",
+    r"aaaaaaa]",
+    r"a{aaaaa",
+    r"a}",
+    r"{3}",
+    r"\w(?=[\0\n])",
+    r"\w$",
+    r"\w$[\n\0]ajsfs",
+    r"\w$[\n\0]w",
+    r"\w$a",
+    r"\w$b",
+    r"\w$[\n\0]",
+    r"\w[\n\0]\w",
+    r"\w (?=6)\d{2}",
+    r"\d",
+    r"a(?=h)\n"
 ]
 
 def fetch_executable():
@@ -33,7 +39,7 @@ def fetch_executable():
         os.remove(os.getcwd() + "/" + filepath)
     except FileNotFoundError:
         pass
-    os.system("cmake ..")
+    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug")
     os.system("cmake --build .")
     potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
     to_use = ""
