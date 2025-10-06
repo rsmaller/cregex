@@ -12,9 +12,11 @@
 #define CREGEX_IMPL_H
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define CREGEX_IMPL_FUNCTION __attribute__((used)) static
+    #define CREGEX_IMPL_FUNC static __attribute__((used))
+    #define CREGEX_IMPL_FUNC_H static
 #else
-    #define CREGEX_IMPL_FUNCTION static
+    #define CREGEX_IMPL_FUNC static
+    #define CREGEX_IMPL_FUNC_H static
 #endif
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -64,50 +66,50 @@ struct RegexPattern {
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_IMPL_FUNCTION void internal_cregex_compile_error(const char *msg, ...);
+CREGEX_IMPL_FUNC_H void internal_cregex_compile_error(const char *msg, ...);
 
-CREGEX_IMPL_FUNCTION void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
-CREGEX_IMPL_FUNCTION void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
-CREGEX_IMPL_FUNCTION void      internal_cregex_toggle_flag(RegexFlag *toCheck, RegexFlag flag);
-CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_has_flag   (const RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNC_H void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNC_H void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNC_H void      internal_cregex_toggle_flag(RegexFlag *toCheck, RegexFlag flag);
+CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_has_flag   (const RegexFlag *toCheck, RegexFlag flag);
 
-CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_get_non_escaped_char_type(char toCheck);
-CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_get_char_class_char_type (char toCheck);
-CREGEX_IMPL_FUNCTION RegexFlag internal_cregex_get_capture_group_type   (char toCheck);
+CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_non_escaped_char_type(char toCheck);
+CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_char_class_char_type (char toCheck);
+CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_capture_group_type   (char toCheck);
 
-CREGEX_IMPL_FUNCTION void internal_cregex_set_char_count_generic     (const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
-CREGEX_IMPL_FUNCTION void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
+CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count_generic     (const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
+CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
 
-CREGEX_IMPL_FUNCTION void         internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNCTION void         internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNCTION void         internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNCTION void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *right, RegexPattern *left);
-CREGEX_IMPL_FUNCTION void         internal_cregex_adjust_alternation_group(RegexPattern *parent);
-CREGEX_IMPL_FUNCTION void         internal_cregex_compile_end_anchor      (RegexPattern *patternToAdd)
-CREGEX_IMPL_FUNCTION RegexPattern internal_cregex_fetch_current_char_incr (const char **str);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *right, RegexPattern *left);
+CREGEX_IMPL_FUNC_H void         internal_cregex_adjust_alternation_group(RegexPattern *parent);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_end_anchor      (RegexPattern *patternToAdd);
+CREGEX_IMPL_FUNC_H RegexPattern internal_cregex_fetch_current_char_incr (const char **str);
 
-CREGEX_IMPL_FUNCTION void internal_cregex_print_char_class       (const RegexPattern *head);
-CREGEX_IMPL_FUNCTION void internal_cregex_print_capture_group    (const RegexPattern *head);
-CREGEX_IMPL_FUNCTION void internal_cregex_print_lookahead        (const RegexPattern *head);
-CREGEX_IMPL_FUNCTION void internal_cregex_print_alternation_group(const RegexPattern *head);
-CREGEX_IMPL_FUNCTION void internal_cregex_print_compiled_pattern (const RegexPattern *head);
-CREGEX_IMPL_FUNCTION void internal_cregex_print_pattern_char     (RegexPattern patternChar);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_char_class       (const RegexPattern *head);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_capture_group    (const RegexPattern *head);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_lookahead        (const RegexPattern *head);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_alternation_group(const RegexPattern *head);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_compiled_pattern (const RegexPattern *head);
+CREGEX_IMPL_FUNC_H void internal_cregex_print_pattern_char     (RegexPattern patternChar);
 
-CREGEX_IMPL_FUNCTION int internal_cregex_is_numeric     (char toMatch);
-CREGEX_IMPL_FUNCTION int internal_cregex_is_alphabetic  (char toMatch);
-CREGEX_IMPL_FUNCTION int internal_cregex_is_alphanumeric(char toMatch);
-CREGEX_IMPL_FUNCTION int internal_cregex_is_whitespace  (char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_is_numeric     (char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_is_alphabetic  (char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_is_alphanumeric(char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_is_whitespace  (char toMatch);
 
-CREGEX_IMPL_FUNCTION int internal_cregex_compare_single_char(const RegexPattern *patternChar, char toMatch);
-CREGEX_IMPL_FUNCTION int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, size_t count);
-CREGEX_IMPL_FUNCTION int internal_cregex_compare_char_class (const RegexPattern *classContainer, char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_single_char(const RegexPattern *patternChar, char toMatch);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, size_t count);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_class (const RegexPattern *classContainer, char toMatch);
 
-CREGEX_IMPL_FUNCTION size_t internal_cregex_match_alternation  (const RegexPattern *parent, const char *strStart, const char **str);
-CREGEX_IMPL_FUNCTION size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char *strStart, const char **str);
-CREGEX_IMPL_FUNCTION size_t internal_cregex_match_lookahead    (const RegexPattern *compiledPattern, const char *strStart, const char *str);
-CREGEX_IMPL_FUNCTION size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, const char *str);
-CREGEX_IMPL_FUNCTION size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, const char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_alternation  (const RegexPattern *parent, const char *strStart, const char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char *strStart, const char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookahead    (const RegexPattern *compiledPattern, const char *strStart, const char *str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, const char *str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, const char **str);
 
-#undef CREGEX_IMPL_FUNCTION
+#undef CREGEX_IMPL_FUNC_H
 #undef CREGEX_IMPL
 #endif // CREGEX_IMPL_H
