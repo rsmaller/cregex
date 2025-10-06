@@ -9,7 +9,7 @@ int main(const int argc, const char **argv) {
     }
     const char *myStr = "ayes no maybe 617653462 abz" ;
     const char *myPattern = argv[1];
-    printf("String is \"%s\"\n", myStr);
+    printf("\nString is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
     RegexPattern *pattern = cregex_compile_pattern(myPattern);
     cregex_print_compiled_pattern(pattern);
