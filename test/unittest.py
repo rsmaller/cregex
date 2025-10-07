@@ -4,7 +4,8 @@ import os, pathlib
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
-    r"\d\w?\d",
+    r"\d ?\d",
+    r"\d\d?\d",
     r"(\w{3})",
     r"[a-z]{2}",
     r"\d{2}",
