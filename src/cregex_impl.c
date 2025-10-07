@@ -120,6 +120,9 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, s
     if (*maxInstanceCount == 0) {
         *maxInstanceCount = *minInstanceCount;
     }
+    if (*maxInstanceCount == CREGEX_INF_COUNT) {
+        (*maxInstanceCount)--;
+    }
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
@@ -618,40 +621,46 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *clas
 }
 
 CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, const char **str) { // NOLINT
-    if (!parent) return 0U;
+    if (!parent) return CREGEX_MATCH_FAIL;
     RegexPattern *cursor = parent -> altRight;
     size_t result = 0;
     const char *strCopy = *str;
     size_t currentToAdd;
-    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)))) {
+    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
         result += currentToAdd;
         cursor = cursor -> next;
     }
-    if (result) {
+    if (result != CREGEX_MATCH_FAIL) {
         *str += result;
         return result;
     }
     cursor = parent -> altLeft;
     strCopy = *str;
-    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)))) {
+    result = 0;
+    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
         result += currentToAdd;
         cursor = cursor -> next;
     }
-    *str += result;
+    if (result != CREGEX_MATCH_FAIL) {
+        *str += result;
+    }
     return result;
 }
 
 CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char * const strStart, const char **str) { // NOLINT
-    if (!parent) return 0U;
+    if (!parent) return CREGEX_MATCH_FAIL;
     RegexPattern *cursor = parent -> child;
     size_t result = 0;
     const char *strCopy = *str;
-    size_t currentToAdd;
-    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)))) {
+    size_t currentToAdd = CREGEX_MATCH_FAIL;
+    while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
         result += currentToAdd;
         cursor = cursor -> next;
     }
-    if (result) {
+    if (currentToAdd == CREGEX_MATCH_FAIL) {
+        result = CREGEX_MATCH_FAIL;
+    }
+    if (result != CREGEX_MATCH_FAIL) {
         *str += result;
     }
     return result;
@@ -669,12 +678,13 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_lookahead(const RegexPattern *comp
     }
     compiledPattern = compiledPattern -> child;
     size_t ret = 1;
-    while (compiledPattern) {
+    while (compiledPattern && ret != CREGEX_MATCH_FAIL) {
         ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &str);
         compiledPattern = compiledPattern -> next;
     }
     if (negativity) {
-        ret = !ret;
+        if (ret == CREGEX_MATCH_FAIL) ret = 1;
+        else ret = CREGEX_MATCH_FAIL;
     }
     return ret;
 }
@@ -697,20 +707,23 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_lookbehind(const RegexPattern *com
         lookbehindLength += cursor -> minInstanceCount;
 	    cursor = cursor -> next;
     }
-    if ((size_t)(str - strStart) < lookbehindLength) return 0U;
+    if ((size_t)(str - strStart) < lookbehindLength) {
+        ret = CREGEX_MATCH_FAIL;
+    }
     const char *strCursor = str - lookbehindLength;
-    while (compiledPattern && ret) {
+    while (compiledPattern && ret != CREGEX_MATCH_FAIL) {
         ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &strCursor);
         compiledPattern = compiledPattern -> next;
     }
     if (negativity) {
-        ret = !ret;
+        if (ret == CREGEX_MATCH_FAIL) ret = 1;
+        else ret = CREGEX_MATCH_FAIL;
     }
     return ret;
 }
 
 CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *compiledPattern, const char * const strStart, const char **str) { // NOLINT
-    if (!compiledPattern || !str || !*str) return 0U;
+    if (!compiledPattern || !str || !*str) return CREGEX_MATCH_FAIL;
     if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
         return internal_cregex_match_lookahead(compiledPattern, strStart, *str);
     }
@@ -728,17 +741,17 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
     if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
         return internal_cregex_match_capture_group(compiledPattern, strStart, str);
     }
+    // printf("Min is %zu and max is %zu\n", min, max);
     while (max >= min) {
         const char *postincrement = *str + max;
-        //  Do a check here for length zero things
         if (internal_cregex_compare_char_length(compiledPattern, *str, max, strStart, str)) {
-            size_t lookThrough = 1;
+            size_t lookThrough = 0;
             if (compiledPattern -> next && internal_cregex_has_flag(&compiledPattern -> next -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
                 lookThrough = internal_cregex_match_lookahead(compiledPattern -> next, strStart, postincrement);
             } else if (compiledPattern -> prev && internal_cregex_has_flag(&compiledPattern -> prev -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
                 lookThrough = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
             }
-            if (lookThrough && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement))) {
+            if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
                 *str += max;
                 if (compiledPattern -> primaryChar == 'A' && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
                 return max;
@@ -746,7 +759,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
         }
         max--;
     }
-    return 0;
+    return CREGEX_MATCH_FAIL;
 }
 
 CREGEX_EXPORT RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const char * const strStart, const char *str) {
@@ -764,7 +777,7 @@ CREGEX_EXPORT RegexMatch cregex_match_to_string(const RegexPattern *compiledPatt
         if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
             const char *temp = savePtr;
             size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
-            if (!captureGroupMatchCount || (cursor -> next && !internal_cregex_match_pattern_char(cursor->next, strStart, &temp))) {
+            if (captureGroupMatchCount == CREGEX_MATCH_FAIL || (cursor -> next && internal_cregex_match_pattern_char(cursor->next, strStart, &temp) == CREGEX_MATCH_FAIL)) {
                 savePtr++;
                 cursor = compiledPattern;
                 start = savePtr;
