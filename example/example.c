@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cregex.h>
+#include <signal_debug.h>
 
 int main(const int argc, const char **argv) {
+    POSIX_SIGNAL_HANDLE(SIGSEGV, &segHandler);
     if (argc < 2) {
         printf("Usage: %s <pattern>\n", argv[0]);
         exit(0);

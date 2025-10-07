@@ -5,6 +5,8 @@ folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
     r"\d ?\d",
+    r"\d*",
+    r"\d+",
     r"\d\d?\d",
     r"(\w{3})",
     r"[a-z]{2}",
@@ -24,7 +26,6 @@ testCases = [
     r"\w (?=6)\d{2}",
     r"\d",
     r"\w{2}",
-    # r"\w \w?\d",
     r"\A\w{2}",
     r"a(?=h)\n"
 ]

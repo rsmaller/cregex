@@ -28,16 +28,16 @@ typedef struct RegexMatchContainer {
 //  SECTION: Flags and Initializer Macros
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#define CREGEX_FLAG_BIT(x)                           (((RegexFlag)1)<<(x))
+#define CREGEX_FLAG_BIT(x) (((RegexFlag)1)<<(x))
 
 //  Argument Flag Macros
-#define CREGEX_PERMUTED_MATCHES                      CREGEX_FLAG_BIT(0)
+#define CREGEX_PERMUTED_MATCHES CREGEX_FLAG_BIT(0)
 
 //  Other Macros
 #define CREGEX_INF_COUNT SIZE_MAX
 
 //  Exit Codes
-#define CREGEX_COMPILE_FAILURE -1
+#define CREGEX_COMPILE_FAILURE (-1)
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: Linking Macros
@@ -64,6 +64,7 @@ typedef struct RegexMatchContainer {
 CREGEX_EXPORT RegexPattern *cregex_compile_pattern(const char *pattern);
 
 CREGEX_EXPORT RegexMatch          cregex_match_to_string(const RegexPattern *compiledPattern, const char *strStart, const char *str);
+CREGEX_EXPORT RegexMatch          cregex_longest_match  (const RegexPattern *compiledPattern, const char *strStart, const char *str);
 CREGEX_EXPORT RegexMatchContainer cregex_match          (const RegexPattern *compiledPattern, const char *str, RegexFlag flags);
 
 CREGEX_EXPORT void cregex_print_compiled_pattern (const RegexPattern *head);

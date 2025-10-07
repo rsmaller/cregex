@@ -18,7 +18,8 @@ IF (Link STREQUAL "static")
     add_library(cregex STATIC ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
     target_compile_definitions(cregex PRIVATE CREGEX_STATIC)
 ELSE()
-    add_library(cregex SHARED ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
+    add_library(cregex SHARED ${CMAKE_SOURCE_DIR}/src/cregex_impl.c
+            include/signal_debug.h)
 ENDIF()
 
 

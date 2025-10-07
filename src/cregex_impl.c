@@ -761,6 +761,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
     return CREGEX_MATCH_FAIL;
 }
 
+// Grabs the FIRST matching thing.
 CREGEX_EXPORT RegexMatch cregex_match_to_string(const RegexPattern *compiledPattern, const char * const strStart, const char *str) {
     if (!compiledPattern || !str) return (RegexMatch){0};
     const RegexPattern *cursor = compiledPattern;
@@ -825,6 +826,20 @@ CREGEX_EXPORT RegexMatch cregex_match_to_string(const RegexPattern *compiledPatt
     returnVal.match = start;
     if (!returnVal.matchLength) free(returnVal.groups);
     return returnVal;
+}
+
+// Grabs the LONGEST matching thing.
+CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, const char *str) {
+    RegexMatch ret = {0};
+    while (str == strStart || *(str-1)) {
+        RegexMatch currentMatch = cregex_match_to_string(compiledPattern, strStart, str);
+        printf("Str is %s\n, current match length: %zu", str, ret.matchLength);
+        if (currentMatch.matchLength > ret.matchLength) {
+            ret = currentMatch;
+        }
+        str++;
+    }
+    return ret;
 }
 
 CREGEX_EXPORT RegexMatchContainer cregex_match(const RegexPattern *compiledPattern, const char *str, const RegexFlag flags) {
