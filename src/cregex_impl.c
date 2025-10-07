@@ -387,7 +387,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_end_anchor(RegexPattern *patternTo
     internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER);
     cursor -> minInstanceCount = 1;
     cursor -> maxInstanceCount = 1;
-    cursor -> primaryChar = '0';
+    cursor -> primaryChar = 'Z';
 }
 
 CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char **str) {
@@ -557,11 +557,11 @@ CREGEX_IMPL_FUNC int internal_cregex_is_whitespace(const char toMatch) {
     return toMatch == ' ' || toMatch == '\n' || toMatch == '\t' || toMatch == '\r';
 }
 
-CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *patternChar, const char toMatch) { // NOLINT
+CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *patternChar, const char toMatch, const char * const strStart, const char **str) { // NOLINT
     if (!patternChar) return 0;
     const char matchAgainst = patternChar->primaryChar;
     if (internal_cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
-        return internal_cregex_compare_char_class(patternChar, toMatch);
+        return internal_cregex_compare_char_class(patternChar, toMatch, strStart, str);
     }
     if (!internal_cregex_has_flag(&patternChar->flags, CREGEX_PATTERN_METACHARACTER)) {
         return matchAgainst == toMatch;
@@ -583,8 +583,10 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
             return toMatch == '\n';
         case 't':
             return toMatch == '\t';
-        case '0':
+        case 'Z':
             return toMatch == '\0';
+        case 'A':
+            return *str == strStart;
         case '.':
              return toMatch != '\n';
         case '-':
@@ -594,20 +596,20 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
     }
 }
 
-CREGEX_IMPL_FUNC int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, const size_t count) {
+CREGEX_IMPL_FUNC int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, const size_t count, const char * const strStart, const char **str) {
     int ret = 1;
     for (size_t i=0; i<count; i++) {
-        ret = ret && internal_cregex_compare_single_char(patternChar, matchAgainst[i]);
+        ret = ret && internal_cregex_compare_single_char(patternChar, matchAgainst[i], strStart, str);
     }
     return ret;
 }
 
-CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *classContainer, const char toMatch) { // NOLINT
+CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *classContainer, const char toMatch, const char * const strStart, const char **str) { // NOLINT
     if (!classContainer) return 0;
 	RegexPattern *start = classContainer -> child;
     if (!start) return 0;
 	while (start) {
-		if (internal_cregex_compare_single_char(start, toMatch)) {
+		if (internal_cregex_compare_single_char(start, toMatch, strStart, str)) {
 		    return 1;
 		}
 		start = start -> next;
@@ -728,7 +730,8 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
     }
     while (max >= min) {
         const char *postincrement = *str + max;
-        if (internal_cregex_compare_char_length(compiledPattern, *str, max)) {
+        //  Do a check here for length zero things
+        if (internal_cregex_compare_char_length(compiledPattern, *str, max, strStart, str)) {
             size_t lookThrough = 1;
             if (compiledPattern -> next && internal_cregex_has_flag(&compiledPattern -> next -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
                 lookThrough = internal_cregex_match_lookahead(compiledPattern -> next, strStart, postincrement);
@@ -737,6 +740,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
             }
             if (lookThrough && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement))) {
                 *str += max;
+                if (compiledPattern -> primaryChar == 'A' && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
                 return max;
             }
         }
