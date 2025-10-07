@@ -601,6 +601,7 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
 
 CREGEX_IMPL_FUNC int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, const size_t count, const char * const strStart, const char **str) {
     int ret = 1;
+    if (count == 0) return ret;
     for (size_t i=0; i<count; i++) {
         ret = ret && internal_cregex_compare_single_char(patternChar, matchAgainst[i], strStart, str);
     }
@@ -756,7 +757,8 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
                 return max;
             }
         }
-        max--;
+        if (max - 1 < max) max--;
+        else break;
     }
     return CREGEX_MATCH_FAIL;
 }
@@ -778,7 +780,8 @@ CREGEX_EXPORT RegexMatch cregex_match_to_string(const RegexPattern *compiledPatt
             const char *temp = savePtr;
             size_t captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
             if (captureGroupMatchCount == CREGEX_MATCH_FAIL || (cursor -> next && internal_cregex_match_pattern_char(cursor->next, strStart, &temp) == CREGEX_MATCH_FAIL)) {
-                savePtr++;
+                if (*(savePtr+1)) savePtr++;
+                else break;
                 cursor = compiledPattern;
                 start = savePtr;
                 free(returnVal.groups);
@@ -833,7 +836,6 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
     RegexMatch ret = {0};
     while (str == strStart || *(str-1)) {
         RegexMatch currentMatch = cregex_match_to_string(compiledPattern, strStart, str);
-        printf("Str is %s\n, current match length: %zu", str, ret.matchLength);
         if (currentMatch.matchLength > ret.matchLength) {
             ret = currentMatch;
         }

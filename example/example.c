@@ -15,7 +15,7 @@ int main(const int argc, const char **argv) {
     printf("Pattern is \"%s\"\n", myPattern);
     RegexPattern *pattern = cregex_compile_pattern(myPattern);
     cregex_print_compiled_pattern(pattern);
-    const RegexMatch myMatch = cregex_match_to_string(pattern, myStr, myStr);
+    const RegexMatch myMatch = cregex_longest_match(pattern, myStr, myStr);
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
     printf("Match length: %zu\n", myMatch.matchLength);
