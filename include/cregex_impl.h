@@ -68,7 +68,8 @@ struct RegexPattern {
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_IMPL_FUNC_H void internal_cregex_compile_error(const char *msg, ...);
+CREGEX_IMPL_FUNC_H void internal_cregex_compile_error(const char *format, ...);
+CREGEX_IMPL_FUNC_H void internal_cregex_output       (const char *format, ...);
 
 CREGEX_IMPL_FUNC_H void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
 CREGEX_IMPL_FUNC_H void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);

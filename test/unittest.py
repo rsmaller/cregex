@@ -5,6 +5,8 @@ folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
     r"(\w{1,4}|\d{1,4})",
+    r"(\w{4}|\d{4})",
+    r"y(b|e)",
     r"\d{1,4}",
     r"(?<=\n)\w{4} \d{2}",
     r"^\w{3}",
@@ -30,8 +32,7 @@ testCases = [
     r"\w (?=6)\d{2}",
     r"\d",
     r"\w{2}",
-    r"\A\w{2}",
-    r"a(?=h)\n"
+    r"\A\w{2}"
 ]
 
 def fetch_executable():

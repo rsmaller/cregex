@@ -14,7 +14,7 @@ void segHandler(int code) { // NOLINT
 
 #define POSIX_SIGNAL_HANDLE(arg1, arg2) signal(arg1, arg2)
 #else
-#define POSIX_SIGNAL_HANDLE()
+#define POSIX_SIGNAL_HANDLE(arg1, arg2)
 #endif
 
 #endif //CREGEX_SIGNAL_DEBUG_H
