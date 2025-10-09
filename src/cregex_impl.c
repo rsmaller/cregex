@@ -104,15 +104,17 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, s
         char *terminator;
         *minInstanceCount = strtoull((*str)++, &terminator, 10);
         *str = terminator;
-        while (**str == ' ' || **str == ',') {
+        if (**str == ' ' || **str == ',') {
+            while (**str == ' ' || **str == ',') (*str)++;
+            *maxInstanceCount = strtoull(*str, &terminator, 10);
+            *str = terminator;
             (*str)++;
         }
-        if (!**str || *terminator != '}') {
+        if (*terminator != '}') {
+            printf("Terminator is wrong: %c\n", *terminator);
             internal_cregex_compile_error("Length specifier not properly terminated!");
         }
-        *maxInstanceCount = strtoull(*str, &terminator, 10);
-        *str = terminator;
-        (*str)++;
+
     } else {
         *minInstanceCount = 1;
         *maxInstanceCount = 1;
@@ -300,6 +302,7 @@ CREGEX_IMPL_FUNC void internal_cregex_adjust_alternation_group(RegexPattern *par
     if (parent -> altRight -> primaryChar == '|') {
         toFree = parent -> altRight;
         parent -> altRight = parent -> altRight -> next;
+        parent -> altRight -> prev = NULL;
         free(toFree);
     }
     RegexPattern *cursor = parent -> altLeft;
@@ -590,8 +593,10 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
             return toMatch == '\0';
         case 'A':
             return *str == strStart;
+        case '^':
+            return *str == strStart;
         case '.':
-             return toMatch != '\n';
+            return toMatch != '\n';
         case '-':
             return toMatch <= patternChar -> charClassRangeMax && toMatch >= patternChar -> charClassRangeMin;
         default:
@@ -628,6 +633,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
     const char *strCopy = *str;
     size_t currentToAdd;
     while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+        if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKBEHIND)) printf("ERROR!!!!\n");
         result += currentToAdd;
         cursor = cursor -> next;
     }

@@ -3,13 +3,14 @@
 #include <cregex.h>
 #include <signal_debug.h>
 
+const char *myStr = "ayes no maybe 617653462 abz\nwoah 98" ;
+
 int main(const int argc, const char **argv) {
     POSIX_SIGNAL_HANDLE(SIGSEGV, &segHandler);
     if (argc < 2) {
         printf("Usage: %s <pattern>\n", argv[0]);
         exit(0);
     }
-    const char *myStr = "ayes no maybe 617653462 abz\nwoah" ;
     const char *myPattern = argv[1];
     printf("\nString is \"%s\"\n", myStr);
     printf("Pattern is \"%s\"\n", myPattern);
