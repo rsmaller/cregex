@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <cregex.h>
 #include <signal_debug.h>
+#include <time.h>
 
 const char *myStr = "ayes no maybe 617653462 abz\nwoah 98" ;
 
@@ -16,10 +17,13 @@ int main(const int argc, const char **argv) {
     printf("Pattern is \"%s\"\n", myPattern);
     RegexPattern *pattern = cregex_compile_pattern(myPattern);
     cregex_print_compiled_pattern(pattern);
+    clock_t start = clock();
     const RegexMatch myMatch = cregex_longest_match(pattern, myStr, myStr);
+    clock_t end = clock();
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
     printf("Match length: %zu\n", myMatch.matchLength);
+    printf("Time used: %Lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     printf("\n");
     return 0;
 }
