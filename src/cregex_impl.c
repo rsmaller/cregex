@@ -108,6 +108,9 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, s
         (*str)++;
     } else if (**str == '{') {
         (*str)++;
+        if (!internal_cregex_is_numeric(**str)) {
+            internal_cregex_compile_error("Count specifier does not contain a valid number format!");
+        }
         char *terminator;
         *minInstanceCount = strtoull((*str)++, &terminator, 10);
         *str = terminator;
@@ -375,7 +378,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
         internal_cregex_adjust_alternation_group(patternToAdd);
     }
     if (**pattern != ')') {
-        internal_cregex_compile_error("Capture group not properly terminated: %c", **pattern);
+        internal_cregex_compile_error("Capture group not properly terminated!");
     }
 }
 
@@ -451,8 +454,6 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
     internal_cregex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
     return ret;
 }
-
-// WRITE VALIDATOR FUNCTION HERE
 
 RegexPattern *cregex_compile_pattern(const char *pattern) {
     RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
