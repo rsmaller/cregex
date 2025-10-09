@@ -60,3 +60,10 @@ set_target_properties(cregex PROPERTIES
 )
 
 include(CPack)
+
+# Unit Tests
+
+find_package(Python3)
+add_custom_target(unittest COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/test/unittest.py
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        USES_TERMINAL)

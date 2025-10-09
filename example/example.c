@@ -23,7 +23,7 @@ int main(const int argc, const char **argv) {
     printf("Match is: ");
     cregex_print_match_with_groups(myMatch);
     printf("Match length: %zu\n", myMatch.matchLength);
-    printf("Time used: %Lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+    printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     printf("\n");
     return 0;
 }

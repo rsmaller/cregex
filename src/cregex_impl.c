@@ -765,7 +765,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
             }
             if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
                 *str += max;
-                if (compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == '^' && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
+                if ((compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
                 return max;
             }
         }
