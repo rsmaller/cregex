@@ -53,7 +53,9 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char 
         case '$':
         case '^':
         case '[':
+        case ']':
         case '(':
+        case ')':
             return CREGEX_PATTERN_METACHARACTER;
         case '{':
             internal_cregex_compile_error("Number specifier encountered outside meaningful token");
@@ -80,6 +82,7 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_capture_group_type(const char toC
     switch (toCheck) {
         case '.':
         case '{':
+        case ')':
         case '*':
         case '+':
         case '?':
@@ -412,6 +415,7 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
     if (**str == '\\') {
         internal_cregex_set_flag(&state, CREGEX_STATE_ESCAPED_CHAR);
         (*str)++;
+        if (!**str) internal_cregex_compile_error("Rogue backslash at end of pattern");
     }
     if (**str == '[' && !internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
         internal_cregex_set_flag(&state, CREGEX_STATE_INSIDE_CHAR_CLASS);
@@ -456,6 +460,7 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 }
 
 RegexPattern *cregex_compile_pattern(const char *pattern) {
+    if (!pattern || !*pattern) return NULL;
     RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
     RegexPattern *cursor = ret;
     *ret = internal_cregex_fetch_current_char_incr(&pattern);
