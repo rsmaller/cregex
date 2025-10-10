@@ -4,6 +4,9 @@ import os, pathlib
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
+    r"[]",
+    r"[^]",
+    r"[a\-z]",
     r"[a-z",
     r"(abc",
     r"{}",
@@ -29,6 +32,8 @@ testCases = [
     r"\d\d?\d",
     r"(\w{3})",
     r"[a-z]{2}",
+    r"[^a-z]{2}",
+    r"[a^z]{2}",
     r"\d{2}",
     r"(\w{3})( \d{3})",
     r"(\w{3})(?= )",

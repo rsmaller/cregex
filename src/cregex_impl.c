@@ -68,7 +68,6 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char 
 
 CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
     switch (toCheck) {
-        case '^':
         case '\\':
         case '-':
         case ']':
@@ -181,6 +180,10 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_char_class(RegexPattern *patternTo
     internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_METACHARACTER_CLASS);
     size_t charClassLength = 0;
     (*pattern)++;
+    if (**pattern == '^' && *(*pattern-1) != '\\') {
+        internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_NEGATIVE_MATCH);
+        (*pattern)++;
+    }
     patternToAdd -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
     RegexPattern *currentClassChar = patternToAdd -> child;
     while (**pattern) {
@@ -196,9 +199,6 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_char_class(RegexPattern *patternTo
             (*pattern)++;
             charType = internal_cregex_get_char_class_char_type(**pattern);
             internal_cregex_toggle_flag(&charType, CREGEX_PATTERN_METACHARACTER);
-        } else if (**pattern == '^' && *(*pattern-1) != '\\') {
-            internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_NEGATIVE_MATCH);
-            (*pattern)++;
         }
         currentClassChar -> flags = charType;
         if (*(*pattern+1) == '-' && **pattern != '\\') {
