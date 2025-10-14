@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-CREGEX_IMPL_FUNC void internal_cregex_compile_error(const char * const format, ...) {
+CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_compile_error(const char * const format, ...) {
     va_list args;
     va_start(args, format);
     char *msgStart = "CRegex Compile Error: ";
@@ -59,11 +59,9 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char 
             return CREGEX_PATTERN_METACHARACTER;
         case '{':
             internal_cregex_compile_error("Number specifier encountered outside meaningful token");
-            break;
         default:
             return 0;
     }
-    return 0;
 }
 
 CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
@@ -96,38 +94,41 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_capture_group_type(const char toC
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
-    if (**str == '?') {
+    if (!str || !*str) return;
+    char **str_internal = NULL;
+    memcpy(&str_internal, &str, sizeof(str_internal));
+    if (**str_internal == '?') {
         *minInstanceCount = 0;
         *maxInstanceCount = 1;
-        (*str)++;
-    } else if (**str == '*') {
+        (*str_internal)++;
+    } else if (**str_internal == '*') {
         *minInstanceCount = 0;
         *maxInstanceCount = CREGEX_INF_COUNT;
-        (*str)++;
-    } else if (**str == '+') {
+        (*str_internal)++;
+    } else if (**str_internal == '+') {
         *minInstanceCount = 1;
         *maxInstanceCount = CREGEX_INF_COUNT;
-        (*str)++;
-    } else if (**str == '{') {
-        (*str)++;
-        if (**str == ',') {
+        (*str_internal)++;
+    } else if (**str_internal == '{') {
+        (*str_internal)++;
+        if (**str_internal == ',') {
             *minInstanceCount = 0;
-        } else if (!internal_cregex_is_numeric(**str)) {
+        } else if (!internal_cregex_is_numeric(**str_internal)) {
             internal_cregex_compile_error("Count specifier does not contain a valid number format!");
         } else {
-            *minInstanceCount = strtoull((*str)++, str, 10);
+            *minInstanceCount = strtoull((*str_internal)++, str_internal, 10);
         }
-        if (**str == ' ' || **str == ',') {
-            while (**str == ' ' || **str == ',') (*str)++;
-            if (**str == '}') *maxInstanceCount = CREGEX_INF_COUNT;
-            else *maxInstanceCount = strtoull(*str, str, 10);
+        if (**str_internal == ' ' || **str_internal == ',') {
+            while (**str_internal == ' ' || **str_internal == ',') (*str_internal)++;
+            if (**str_internal == '}') *maxInstanceCount = CREGEX_INF_COUNT;
+            else *maxInstanceCount = strtoull(*str_internal, str_internal, 10);
         } else {
             *maxInstanceCount = *minInstanceCount;
         }
-        if (**str != '}') {
+        if (**str_internal != '}') {
             internal_cregex_compile_error("Count specifier does not contain a valid number format!");
         }
-        (*str)++;
+        (*str_internal)++;
     } else {
         *minInstanceCount = 1;
         *maxInstanceCount = 1;
@@ -137,42 +138,6 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, s
     }
     if (*maxInstanceCount == CREGEX_INF_COUNT) {
         (*maxInstanceCount)--;
-    }
-}
-
-CREGEX_IMPL_FUNC void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
-    const char toCheck = *(*str+1);
-    if (toCheck == '?') {
-        *minInstanceCount = 0;
-        *maxInstanceCount = 1;
-        (*str)++;
-    } else if (toCheck == '*') {
-        *minInstanceCount = 0;
-        *maxInstanceCount = CREGEX_INF_COUNT;
-        (*str)++;
-    } else if (toCheck == '+') {
-        *minInstanceCount = 1;
-        *maxInstanceCount = CREGEX_INF_COUNT;
-        (*str)++;
-    } else if (toCheck == '{') {
-        (*str)+=2;
-        char *terminator;
-        *minInstanceCount = strtoull((*str)++, &terminator, 10);
-        *str = terminator;
-        while (**str == ' ' || **str == ',') {
-            (*str)++;
-        }
-        if (!**str) {
-            internal_cregex_compile_error("Length specifier not properly terminated!");
-        }
-        *maxInstanceCount = strtoull(*str, &terminator, 10);
-        *str = terminator;
-    } else {
-        *minInstanceCount = 1;
-        *maxInstanceCount = 1;
-    }
-    if (*maxInstanceCount == 0) {
-        *maxInstanceCount = *minInstanceCount;
     }
 }
 
@@ -282,53 +247,70 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
             cursor -> charClassLength = 0;
             cursor -> child = NULL;
         }
-        internal_cregex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+        (*pattern)++;
+        internal_cregex_set_char_count_generic(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
         if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKBEHIND) && cursor -> minInstanceCount != cursor -> maxInstanceCount) {
             internal_cregex_compile_error("Lookbehinds do not support variadic length matches\n");
         }
-        if (*(*pattern+1) != ')' && **pattern != '\\') {
+        if (**pattern != ')' && **pattern != '\\') {
             cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
             cursor -> next -> prev = cursor;
             cursor = cursor -> next;
         } else {
             cursor -> next = NULL;
         }
-        (*pattern)++;
     }
     if (**pattern != ')') {
         internal_cregex_compile_error("Lookbehind/lookahead not properly terminated");
     }
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *right, RegexPattern *left) {
+CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *left) {
     internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
     internal_cregex_clear_flag(&parent -> flags, CREGEX_PATTERN_CAPTURE_GROUP);
     internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_SAVE_GROUP);
-    if (!parent || !left || !right) return;
-    parent -> altRight = right;
-    parent -> altRight -> prev = NULL;
-    parent -> altLeft = left;
-    parent -> altLeft -> prev = NULL;
-    parent -> child = NULL;
-    parent -> primaryChar = '|';
+    if (!parent || !left) return;
+    if (parent -> alternations) {
+        return;
+    }
+    parent -> alternations = (RegexPattern **)calloc(1, sizeof(RegexPattern *));
+    parent -> alternations[0] = left;
+    parent -> alternationCount = 1;
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_adjust_alternation_group(RegexPattern *parent) {
-    void *toFree = NULL;
-    if (parent -> altRight -> primaryChar == '|') {
-        toFree = parent -> altRight;
-        parent -> altRight = parent -> altRight -> next;
-        parent -> altRight -> prev = NULL;
-        free(toFree);
-    }
-    RegexPattern *cursor = parent -> altLeft;
+    if (!parent || !parent -> alternations) internal_cregex_compile_error("Alternation group was never allocated");
+    RegexPattern *cursor = parent -> alternations[0];
     while (cursor) {
-        if (cursor -> next == toFree) {
-            cursor -> next = NULL;
-            break;
+        if (cursor -> primaryChar == '|') {
+            RegexPattern **reallocation = (RegexPattern **)realloc(parent -> alternations, ++parent -> alternationCount * sizeof(RegexPattern *));
+            if (!reallocation) {
+                free(parent -> alternations);
+                internal_cregex_compile_error("Alternation group reallocation failed. Terminating");
+            }
+            parent -> alternations = reallocation;
+            parent -> alternations[parent -> alternationCount - 1] = cursor -> next;
+            void *toFree = NULL;
+            if (cursor -> next) {
+                cursor = cursor -> next;
+                if (cursor -> prev && cursor -> prev -> prev) cursor -> prev  -> prev -> next = NULL;
+                toFree = cursor -> prev;
+                free(toFree);
+                cursor -> prev = NULL;
+            } else {
+                cursor -> prev -> next = NULL;
+                toFree = cursor;
+                free(toFree);
+                break;
+            }
+            for (size_t i = 0; i < parent -> alternationCount; i++) {
+                if (parent -> alternations[i] == toFree) parent -> alternations[i] = NULL;
+            }
         }
+
         cursor = cursor -> next;
     }
+
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patternToAdd, const char **pattern) {
@@ -360,7 +342,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
         if (**pattern == '[' && *(*pattern-1) != '\\')  {
             internal_cregex_compile_char_class(cursor, pattern);
         } else if (**pattern == '|' && *(*pattern-1) != '\\') {
-            internal_cregex_compile_alternation(patternToAdd, cursor, start);
+            internal_cregex_compile_alternation(patternToAdd, start);
             internal_cregex_set_flag(&state, CREGEX_STATE_INSIDE_ALTERNATION_GROUP);
         }
         else {
@@ -370,15 +352,15 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
         }
         cursor -> minInstanceCount = 1;
         cursor -> maxInstanceCount = 1;
-        internal_cregex_set_char_count_in_container(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
-        if (*(*pattern+1) != ')' && **pattern != '\\') {
+        (*pattern)++;
+        internal_cregex_set_char_count_generic(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+        if (**pattern != ')' && *(*pattern-1) != '\\') {
             cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
             cursor -> next -> prev = cursor;
             cursor = cursor -> next;
         } else {
             cursor -> next = NULL;
         }
-        (*pattern)++;
     }
     if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_ALTERNATION_GROUP)) {
         internal_cregex_adjust_alternation_group(patternToAdd);
@@ -467,6 +449,9 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
     RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
     RegexPattern *cursor = ret;
     *ret = internal_cregex_fetch_current_char_incr(&pattern);
+    if (internal_cregex_has_flag(&ret -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
+        internal_cregex_compile_error("Cannot start pattern with a lookahead");
+    }
     while (*pattern) {
         cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
         *cursor -> next = internal_cregex_fetch_current_char_incr(&pattern);
@@ -474,6 +459,9 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
         cursor = cursor -> next;
     }
     cursor -> next = NULL;
+    if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
+        internal_cregex_compile_error("Cannot end pattern with a lookbehind");
+    }
     return ret;
 }
 
@@ -527,9 +515,11 @@ CREGEX_IMPL_FUNC void internal_cregex_print_lookahead(const RegexPattern *head) 
 CREGEX_IMPL_FUNC void internal_cregex_print_alternation_group(const RegexPattern *head) { // NOLINT
     if (!head) return;
     internal_cregex_output("|||Alternation Group: ");
-    internal_cregex_print_compiled_pattern(head -> altRight);
-    internal_cregex_output("OR ");
-    internal_cregex_print_compiled_pattern(head -> altLeft);
+    internal_cregex_print_compiled_pattern(head -> alternations[0]);
+    for (size_t i = 1; i < head -> alternationCount; i++) {
+        internal_cregex_output("OR ");
+        internal_cregex_print_compiled_pattern(head -> alternations[i]);
+    }
     internal_cregex_output("||| ");
 }
 
@@ -642,30 +632,21 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *clas
 	return 0;
 }
 
-CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, const char **str) { // NOLINT
+CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, const char **str) {// NOLINT
     if (!parent) return CREGEX_MATCH_FAIL;
-    RegexPattern *cursor = parent -> altLeft;
     size_t result = 0;
     const char *strCopy = *str;
     size_t currentToAdd = CREGEX_MATCH_FAIL;
-    while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-        result += currentToAdd;
-        cursor = cursor -> next;
-    }
-    if (currentToAdd != CREGEX_MATCH_FAIL) {
-        *str += result;
-        return result;
-    }
-    cursor = parent -> altRight;
-    strCopy = *str;
-    result = 0;
-    while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-        result += currentToAdd;
-        cursor = cursor -> next;
-    }
-    if (currentToAdd != CREGEX_MATCH_FAIL) {
-        *str += result;
-        return result;
+    for (size_t i=0; i<parent -> alternationCount; i++) {
+        RegexPattern *cursor = parent -> alternations[i];
+        while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
+            result += currentToAdd;
+            cursor = cursor -> next;
+        }
+        if (currentToAdd != CREGEX_MATCH_FAIL) {
+            *str += result;
+            return result;
+        }
     }
     return CREGEX_MATCH_FAIL;
 }

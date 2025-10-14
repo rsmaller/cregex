@@ -14,9 +14,15 @@
 #if defined(__GNUC__) || defined(__clang__)
     #define CREGEX_IMPL_FUNC static __attribute__((used))
     #define CREGEX_IMPL_FUNC_H static
+    #define CREGEX_NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+    #define CREGEX_IMPL_FUNC static
+    #define CREGEX_IMPL_FUNC_H static
+    #define CREGEX_NORETURN __declspec(noreturn)
 #else
     #define CREGEX_IMPL_FUNC static
     #define CREGEX_IMPL_FUNC_H static
+    #define CREGEX_NORETURN
 #endif
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -55,12 +61,12 @@ struct RegexPattern {
     RegexFlag flags;
     size_t minInstanceCount;
     size_t maxInstanceCount;
+    size_t alternationCount;
     size_t charClassLength;
     RegexPattern *child;
     RegexPattern *next;
     RegexPattern *prev;
-    RegexPattern *altRight;
-    RegexPattern *altLeft;
+    RegexPattern **alternations;
     char charClassRangeMin;
     char charClassRangeMax;
 };
@@ -82,12 +88,11 @@ CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_char_class_char_type (char toCh
 CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_capture_group_type   (char toCheck);
 
 CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count_generic     (const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
-CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count_in_container(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
 
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNC_H void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *right, RegexPattern *left);
+CREGEX_IMPL_FUNC_H void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *left);
 CREGEX_IMPL_FUNC_H void         internal_cregex_adjust_alternation_group(RegexPattern *parent);
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_end_anchor      (RegexPattern *patternToAdd);
 CREGEX_IMPL_FUNC_H RegexPattern internal_cregex_fetch_current_char_incr (const char **str);
