@@ -76,6 +76,9 @@ dkms.conf
 /Makefile
 out*
 buildcmake
+_CPack_Packages
+CPack*
+install_manifest.txt
 
 # Python Environment and Build Files
 .venv
