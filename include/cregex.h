@@ -34,7 +34,7 @@ typedef struct RegexMatchContainer {
 #define CREGEX_PERMUTED_MATCHES CREGEX_FLAG_BIT(0)
 
 //  Other Macros
-#define CREGEX_INF_COUNT SIZE_MAX - 1
+#define CREGEX_INF_COUNT (SIZE_MAX - 1)
 
 //  Exit Codes
 #define CREGEX_COMPILE_FAILURE (-1)
