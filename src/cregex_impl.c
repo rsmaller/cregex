@@ -268,7 +268,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *left) {
     if (!parent || !left) return;
     if (parent -> child) {
-        free(parent -> child);
+        //free(parent -> child);
         parent -> child = NULL;
     }
     internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
@@ -282,7 +282,13 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, 
     parent -> alternationCount = 1;
 }
 
+typedef struct PointerTracker {
+	void **pointers;
+	size_t count;
+} PointerTracker;
+
 CREGEX_IMPL_FUNC void internal_cregex_adjust_alternation_group(RegexPattern *parent) {
+    PointerTracker orSymbolsToFree = {malloc(sizeof(void *)), 0};
     if (!parent || !parent -> alternations) internal_cregex_compile_error("Alternation group was never allocated");
     RegexPattern *cursor = parent -> alternations[0];
     while (cursor) {
@@ -299,22 +305,26 @@ CREGEX_IMPL_FUNC void internal_cregex_adjust_alternation_group(RegexPattern *par
                 cursor = cursor -> next;
                 if (cursor -> prev && cursor -> prev -> prev) cursor -> prev  -> prev -> next = NULL;
                 toFree = cursor -> prev;
-                free(toFree);
+		orSymbolsToFree.pointers = realloc(orSymbolsToFree.pointers, sizeof(void *) * ++orSymbolsToFree.count);
+		orSymbolsToFree.pointers[orSymbolsToFree.count-1] = toFree;
                 cursor -> prev = NULL;
             } else {
                 cursor -> prev -> next = NULL;
                 toFree = cursor;
-                free(toFree);
+                orSymbolsToFree.pointers = realloc(orSymbolsToFree.pointers, sizeof(void *) * ++orSymbolsToFree.count);
+		orSymbolsToFree.pointers[orSymbolsToFree.count-1] = toFree;
                 break;
             }
             for (size_t i = 0; i < parent -> alternationCount; i++) {
                 if (parent -> alternations[i] == toFree) parent -> alternations[i] = NULL;
             }
         }
-
         cursor = cursor -> next;
     }
-
+    for (size_t i=0; i<orSymbolsToFree.count; i++) {
+	free(orSymbolsToFree.pointers[i]);
+    }
+    free(orSymbolsToFree.pointers);
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patternToAdd, const char **pattern) {
@@ -454,6 +464,7 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
     RegexPattern *cursor = ret;
     *ret = internal_cregex_fetch_current_char_incr(&pattern);
     if (internal_cregex_has_flag(&ret -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
+	cregex_destroy_pattern(ret);
         internal_cregex_compile_error("Cannot start pattern with a lookahead");
     }
     while (*pattern) {
@@ -464,6 +475,7 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
     }
     cursor -> next = NULL;
     if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
+	cregex_destroy_pattern(ret);
         internal_cregex_compile_error("Cannot end pattern with a lookbehind");
     }
     return ret;
@@ -844,7 +856,11 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
     }
     returnVal.matchLength = (uintptr_t)savePtr - (uintptr_t)start;
     returnVal.match = start;
-    if (!returnVal.matchLength) free(returnVal.groups);
+    if (!returnVal.matchLength || !returnVal.groupCount) {
+	    free(returnVal.groups);
+	    returnVal.groups = NULL;
+	    returnVal.groupCount = 0;
+    }
     return returnVal;
 }
 
@@ -853,8 +869,11 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
     while (str == strStart || *(str-1)) {
         RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
         if (currentMatch.matchLength > ret.matchLength) {
+            cregex_destroy_match(ret);
             ret = currentMatch;
-        }
+        } else {
+            cregex_destroy_match(currentMatch);
+	}
         str++;
     }
     return ret;
@@ -935,4 +954,15 @@ CREGEX_EXPORT void cregex_destroy_pattern(RegexPattern *head) { // NOLINT
         free(head -> alternations);
     }
     free(head);
+}
+
+CREGEX_EXPORT void cregex_destroy_match(RegexMatch container) {
+	free(container.groups);	
+}
+
+CREGEX_EXPORT void cregex_destroy_match_container(RegexMatchContainer container) {
+	for (size_t i=0; i<container.matchCount; i++) {
+		cregex_destroy_match(container.matches[i]);
+	}
+	free(container.matches);
 }
