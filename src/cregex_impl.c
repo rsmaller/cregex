@@ -266,10 +266,14 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *left) {
+    if (!parent || !left) return;
+    if (parent -> child) {
+        free(parent -> child);
+        parent -> child = NULL;
+    }
     internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
     internal_cregex_clear_flag(&parent -> flags, CREGEX_PATTERN_CAPTURE_GROUP);
     internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_SAVE_GROUP);
-    if (!parent || !left) return;
     if (parent -> alternations) {
         return;
     }
@@ -918,4 +922,17 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
         }
     }
     internal_cregex_output("\n");
+}
+
+CREGEX_EXPORT void cregex_destroy_pattern(RegexPattern *head) { // NOLINT
+    if (!head) return;
+    if (head -> child) cregex_destroy_pattern(head -> child);
+    if (head -> next) cregex_destroy_pattern(head -> next);
+    if (head -> alternations) {
+        for (size_t i = 0; i < head -> alternationCount; i++) {
+            cregex_destroy_pattern(head -> alternations[i]);
+        }
+        free(head -> alternations);
+    }
+    free(head);
 }

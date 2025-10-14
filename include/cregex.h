@@ -62,6 +62,7 @@ typedef struct RegexMatchContainer {
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 CREGEX_EXPORT RegexPattern *cregex_compile_pattern(const char *pattern);
+CREGEX_EXPORT void         cregex_destroy_pattern (RegexPattern *head);
 
 CREGEX_EXPORT RegexMatch          cregex_first_match  (const RegexPattern *compiledPattern, const char *strStart, const char *str);
 CREGEX_EXPORT RegexMatch          cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, const char *str);

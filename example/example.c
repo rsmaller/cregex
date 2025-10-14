@@ -24,6 +24,7 @@ int main(const int argc, const char **argv) {
     cregex_print_match_with_groups(myMatch);
     printf("Match length: %zu\n", myMatch.matchLength);
     printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
-    printf("\n");
+    cregex_destroy_pattern(pattern);
+    printf("Ending; returning 0\n");
     return 0;
 }
