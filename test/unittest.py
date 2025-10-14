@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, pathlib
+import os, pathlib, shutil
 
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
@@ -93,8 +93,8 @@ def fetch_executable():
 
 def test(executable, arg, outfile):
     command = executable + " \"" + arg + "\" >> " + outfile + " 2>&1"
-    # if os.name == 'posix':
-    #     command = "valgrind --leak-check=full --show-leak-kinds=all " + command
+    if shutil.which("valgrind"):
+        command = "valgrind --leak-check=full --show-leak-kinds=all " + command
     os.system(command)
 
 def main():
