@@ -79,7 +79,7 @@ def fetch_executable():
         os.remove(os.getcwd() + "/" + filepath)
     except FileNotFoundError:
         pass
-    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug")
+    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DSanitize=address")
     os.system("cmake --build .")
     potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
     to_use = ""
@@ -92,7 +92,10 @@ def fetch_executable():
     return exec_path
 
 def test(executable, arg, outfile):
-    os.system(executable + " \"" + arg + "\" >> " + outfile + " 2>&1")
+    command = executable + " \"" + arg + "\" >> " + outfile + " 2>&1"
+    # if os.name == 'posix':
+    #     command = "valgrind --leak-check=full --show-leak-kinds=all " + command
+    os.system(command)
 
 def main():
     example = fetch_executable()

@@ -71,6 +71,11 @@ struct RegexPattern {
     char charClassRangeMax;
 };
 
+typedef struct HeapFreeStack {
+    void **pointers;
+    size_t count;
+} HeapFreeStack;
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -118,6 +123,8 @@ CREGEX_IMPL_FUNC_H size_t internal_cregex_match_capture_group(const RegexPattern
 CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookahead    (const RegexPattern *compiledPattern, const char *strStart, const char *str);
 CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, const char *str);
 CREGEX_IMPL_FUNC_H size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, const char **str);
+
+CREGEX_IMPL_FUNC void internal_cregex_free_heap_stack(HeapFreeStack stack);
 
 #undef CREGEX_IMPL_FUNC_H
 #undef CREGEX_IMPL
