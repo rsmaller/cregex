@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 import os, pathlib, shutil
 
+script_dir = os.getcwd()
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
+    r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",
     r"(ay|be|ce)",
     r"(?=a{3})b",
     r"b(?<=a{3})",
@@ -92,7 +94,7 @@ def fetch_executable():
     return exec_path
 
 def test(executable, arg, outfile):
-    command = executable + " \"" + arg + "\" >> " + outfile + " 2>&1"
+    command = executable + " " + script_dir + "/example.txt \"" + arg + "\" >> " + outfile + " 2>&1"
     if shutil.which("valgrind"):
         command = "valgrind --leak-check=full --show-leak-kinds=all " + command
     os.system(command)

@@ -814,7 +814,7 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 			else captureGroupMatchCount = CREGEX_MATCH_FAIL;
 
 			if (captureGroupMatchCount == CREGEX_MATCH_FAIL || (cursor -> next && internal_cregex_match_pattern_char(cursor->next, strStart, &temp) == CREGEX_MATCH_FAIL)) {
-				if (*(savePtr+1)) savePtr++;
+				if (*savePtr) savePtr++;
 				else break;
 				cursor = compiledPattern;
 				start = savePtr;
@@ -892,7 +892,7 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
 CREGEX_EXPORT RegexMatchContainer cregex_match(const RegexPattern *compiledPattern, const char *str, const RegexFlag flags) {
 	RegexMatchContainer ret = {.matchCount = 0, .matches = (RegexMatch *)malloc(sizeof(*ret.matches))};
 	const char * const strStart = str;
-	while (*(str-1)) {
+	while (str == strStart || *(str-1)) {
 		RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
 		if (currentMatch.matchLength) {
 			ret.matchCount++;
@@ -951,6 +951,34 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 		}
 	}
 	internal_cregex_output("\n");
+}
+
+CREGEX_EXPORT char *cregex_file_to_str(const char *path) {
+	FILE *internalFileHandle = fopen(path, "r");
+	if (!internalFileHandle) internal_cregex_compile_error("Failed to grab file at path %s", path);
+	RegexFileString fileAllocation = {calloc(4, sizeof(char)), -1, 4};
+	if (!fileAllocation.buffer) internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
+	char currentChar = 0;
+	while ((currentChar = (char)fgetc(internalFileHandle)) != EOF) {
+		fileAllocation.buffer[++fileAllocation.currentIndex] = currentChar;
+		if (fileAllocation.currentIndex >= (int)fileAllocation.size / 2) {
+			void *reallocation = realloc(fileAllocation.buffer, (fileAllocation.size *= 2) * sizeof(char));
+			if (!reallocation) {
+				free(fileAllocation.buffer);
+				internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);	
+			}
+			fileAllocation.buffer = reallocation; 
+		} 
+	}
+	fclose(internalFileHandle);
+	fileAllocation.buffer[++fileAllocation.currentIndex] = '\0';
+	void *reallocation = realloc(fileAllocation.buffer, (size_t)fileAllocation.currentIndex + 1 * sizeof(char));	
+	if (!reallocation) {
+		free(fileAllocation.buffer);
+		internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
+	}
+	fileAllocation.buffer = reallocation;
+	return fileAllocation.buffer;
 }
 
 CREGEX_EXPORT void cregex_destroy_pattern(RegexPattern *head) { // NOLINT

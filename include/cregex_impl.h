@@ -71,6 +71,12 @@ struct RegexPattern {
     char charClassRangeMax;
 };
 
+typedef struct RegexFileString {
+	char *buffer;
+	int32_t currentIndex;
+	size_t size;
+} RegexFileString;
+
 typedef struct HeapFreeStack {
     void **pointers;
     size_t count;
