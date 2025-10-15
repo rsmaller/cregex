@@ -1,0 +1,11 @@
+This is an example text file. If you would like to check the contents of this file, for regular expressions, go ahead!
+
+Hopefully this works because regex is very difficult. Here are some test values:
+
+192.168.1.1
+
+fe.ff.12.a6.c2.1b
+
+555-213-8004
+
+Word that begins with path: pathological

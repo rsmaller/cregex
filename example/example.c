@@ -3,27 +3,25 @@
 #include <cregex.h>      // NOLINT
 #include <time.h>        // NOLINT
 
-const char *myStr = "ayes no maybe 617653462 abz\nwoah 98" ;
-
 int main(const int argc, const char **argv) {
-    if (argc < 2) {
-        printf("Usage: %s <pattern>\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s <filepath> <pattern>\n", argv[0]);
         exit(0);
     }
-    const char *myPattern = argv[1];
-    printf("\nString is \"%s\"\n", myStr);
-    printf("Pattern is \"%s\"\n", myPattern);
-    RegexPattern *pattern = cregex_compile_pattern(myPattern);
+    char *fileText = cregex_file_to_str(argv[1]);
+    const char *patternStr = argv[2];
+    printf("\nString is \"%s\"\n", fileText);
+    printf("Pattern is \"%s\"\n", patternStr);
+    RegexPattern *pattern = cregex_compile_pattern(patternStr);
     cregex_print_compiled_pattern(pattern);
     clock_t start = clock();
-    const RegexMatch myMatch = cregex_longest_match(pattern, myStr, myStr);
+    RegexMatchContainer myMatch = cregex_match(pattern, fileText, CREGEX_PERMUTED_MATCHES);
     clock_t end = clock();
-    printf("Match is: ");
-    cregex_print_match_with_groups(myMatch);
-    printf("Match length: %zu\n", myMatch.matchLength);
+    cregex_print_match_container(myMatch);
     printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+    cregex_destroy_match_container(myMatch);
     cregex_destroy_pattern(pattern);
-    cregex_destroy_match(myMatch);
+    free(fileText);
     printf("Ending; returning 0\n");
     return 0;
 }
