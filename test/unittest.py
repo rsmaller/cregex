@@ -79,7 +79,7 @@ def fetch_executable():
         os.remove(os.getcwd() + "/" + filepath)
     except FileNotFoundError:
         pass
-    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DSanitize=address")
+    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug")
     os.system("cmake --build .")
     potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
     to_use = ""
