@@ -805,7 +805,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 	if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
 		return internal_cregex_match_capture_group(compiledPattern, strStart, str);
 	}
-	while (max >= min) {
+	for (;max >= min && max - 1 < max; max--) {
 		const char *postincrement = *str + max;
 		if (internal_cregex_compare_char_length(compiledPattern, *str, max, strStart, str)) {
 			size_t lookThrough = 0;
@@ -820,8 +820,6 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 				return max;
 			}
 		}
-		if (max - 1 < max) max--;
-		else break;
 	}
 	return CREGEX_MATCH_FAIL;
 }
