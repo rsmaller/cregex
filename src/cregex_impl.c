@@ -944,7 +944,7 @@ CREGEX_EXPORT RegexMatchContainer cregex_multi_match(const RegexPattern *compile
 			}
 			ret.matches[ret.matchCount - 1] = currentMatch;
 			if (internal_cregex_has_flag(&flags, CREGEX_PERMUTED_MATCHES)) str = currentMatch.match + 1;
-			else str = currentMatch.match + currentMatch.matchLength;
+			else str = currentMatch.matchLength ? currentMatch.match + currentMatch.matchLength : currentMatch.match + 1;
 		} else {
 			str++;
 		}
