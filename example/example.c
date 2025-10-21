@@ -10,16 +10,23 @@ int main(const int argc, const char **argv) {
     }
     char *fileText = cregex_file_to_str(argv[1]);
     const char *patternStr = argv[2];
-    printf("\nString is \"%s\"\n", fileText);
+    printf("\nMatching from file %s\n", argv[1]);
     printf("Pattern is \"%s\"\n", patternStr);
     RegexPattern *pattern = cregex_compile_pattern(patternStr);
     cregex_print_compiled_pattern(pattern);
     clock_t start = clock();
-    RegexMatchContainer myMatch = cregex_match(pattern, fileText, CREGEX_PERMUTED_MATCHES);
+#ifdef CREGEX_EXAMPLE_MULTI_MATCH
+    RegexMatchContainer myMatch = cregex_multi_match(pattern, fileText, CREGEX_PERMUTED_MATCHES);
     clock_t end = clock();
     cregex_print_match_container(myMatch);
-    printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cregex_destroy_match_container(myMatch);
+#else
+    RegexMatch myMatch = cregex_longest_match(pattern, fileText, fileText);
+    clock_t end = clock();
+    printf("Match: ");
+    cregex_print_match_with_groups(myMatch);
+#endif
+    printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cregex_destroy_pattern(pattern);
     free(fileText);
     printf("Ending; returning 0\n");

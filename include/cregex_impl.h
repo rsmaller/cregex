@@ -98,7 +98,7 @@ CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_non_escaped_char_type(char toCh
 CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_char_class_char_type (char toCheck);
 CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_capture_group_type   (char toCheck);
 
-CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count_generic     (const char **str, size_t *minInstanceCount, size_t *maxInstanceCount);
+CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count(RegexPattern *toSet, const char **str);
 
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);

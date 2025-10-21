@@ -48,8 +48,6 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_has_flag(const RegexFlag *toCheck, co
 CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
 	switch (toCheck) {
 		case '.':
-		case '*':
-		case '+':
 		case '$':
 		case '^':
 		case '[':
@@ -58,6 +56,9 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char 
 		case ')':
 			return CREGEX_PATTERN_METACHARACTER;
 		case '{':
+		case '*':
+		case '+':
+		case '?':
 			internal_cregex_compile_error("Number specifier encountered outside meaningful token");
 		default:
 			return 0;
@@ -93,7 +94,9 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_capture_group_type(const char toC
 	}
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, size_t *minInstanceCount, size_t *maxInstanceCount) {
+CREGEX_IMPL_FUNC void internal_cregex_set_char_count(RegexPattern *toSet, const char **str) {
+	size_t *minInstanceCount = &toSet->minInstanceCount;
+	size_t *maxInstanceCount = &toSet->maxInstanceCount;
 	if (!str || !*str) return;
 	char **str_internal = NULL;
 	memcpy(&str_internal, &str, sizeof(str_internal));
@@ -138,6 +141,9 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count_generic(const char **str, s
 	}
 	if (*maxInstanceCount == CREGEX_INF_COUNT) {
 		(*maxInstanceCount)--;
+	}
+	if (internal_cregex_has_flag(&toSet->flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND) && (*minInstanceCount != 1 || *maxInstanceCount != 1)) {
+		internal_cregex_compile_error("Lookaheads and lookbehinds do not support variadic lengths in this regex implementation");
 	}
 }
 
@@ -229,6 +235,9 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 		if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
 			break;
 		}
+		if (**pattern == '(' && *pattern > patternStart && *(*pattern-1) != '\\') {
+			internal_cregex_compile_error("Nested captures are not supported in this regex implementation");
+		}
 		RegexFlag charType = internal_cregex_get_capture_group_type(**pattern);
 		if (**pattern == '\\') {
 			(*pattern)++;
@@ -248,7 +257,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 			cursor -> child = NULL;
 		}
 		(*pattern)++;
-		internal_cregex_set_char_count_generic(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+		internal_cregex_set_char_count(cursor, pattern);
 		if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKBEHIND) && cursor -> minInstanceCount != cursor -> maxInstanceCount) {
 			internal_cregex_compile_error("Lookbehinds do not support variadic length matches\n");
 		}
@@ -347,10 +356,13 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
 	RegexPattern *start = cursor;
 	while (**pattern) {
 		if (!**pattern) {
-			internal_cregex_compile_error("Character class not properly terminated!");
+			internal_cregex_compile_error("Capture group not properly terminated!");
 		}
 		if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
 			break;
+		}
+		if (**pattern == '(' && *pattern > patternStart && *(*pattern-1) != '\\') {
+			internal_cregex_compile_error("Nested captures are not supported in this regex implementation");
 		}
 		RegexFlag charType = internal_cregex_get_capture_group_type(**pattern);
 		if (**pattern == '\\') {
@@ -377,7 +389,7 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
 		cursor -> minInstanceCount = 1;
 		cursor -> maxInstanceCount = 1;
 		(*pattern)++;
-		internal_cregex_set_char_count_generic(pattern, &cursor -> minInstanceCount, &cursor -> maxInstanceCount);
+		internal_cregex_set_char_count(cursor, pattern);
 		if (**pattern != ')' && *(*pattern-1) != '\\') {
 			cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
 			cursor -> next -> prev = cursor;
@@ -464,7 +476,7 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 		internal_cregex_compile_end_anchor(&ret);
 	}
 	(*str)++;
-	internal_cregex_set_char_count_generic(str, &ret.minInstanceCount, &ret.maxInstanceCount);
+	internal_cregex_set_char_count(&ret, str);
 	return ret;
 }
 
@@ -663,18 +675,32 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 	size_t result = 0;
 	const char *strCopy = *str;
 	size_t currentToAdd = CREGEX_MATCH_FAIL;
-	for (size_t i=0; i<parent -> alternationCount; i++) {
-		RegexPattern *cursor = parent -> alternations[i];
-		while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-			result += currentToAdd;
-			cursor = cursor -> next;
+	size_t i=0;
+	int alternationMatched = 0;
+	for (i=0; i<parent -> maxInstanceCount; i++) {
+		alternationMatched = 0;
+		for (size_t j=0; j<parent -> alternationCount; j++) {
+			RegexPattern *cursor = parent -> alternations[j];
+			while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
+				result += currentToAdd;
+				cursor = cursor -> next;
+			}
+			if (currentToAdd != CREGEX_MATCH_FAIL) {
+				alternationMatched = 1;
+				break;
+			}
 		}
-		if (currentToAdd != CREGEX_MATCH_FAIL) {
-			*str += result;
-			return result;
+		if (!alternationMatched) {
+			break;
 		}
 	}
-	return CREGEX_MATCH_FAIL;
+	if (i < parent -> minInstanceCount) {
+		result = CREGEX_MATCH_FAIL;
+	}
+	if (result != CREGEX_MATCH_FAIL) {
+		*str += result;
+	}
+	return result;
 }
 
 CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char * const strStart, const char **str) { // NOLINT
@@ -683,11 +709,19 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	size_t result = 0;
 	const char *strCopy = *str;
 	size_t currentToAdd = CREGEX_MATCH_FAIL;
-	while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
-		result += currentToAdd;
-		cursor = cursor -> next;
+	size_t i=0;
+	for (i=0; i<parent -> maxInstanceCount; i++) {
+		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+			result += currentToAdd;
+			cursor = cursor -> next;
+		}
+		cursor = parent -> child;
+		if (currentToAdd == CREGEX_MATCH_FAIL) {
+			result = CREGEX_MATCH_FAIL;
+			break;
+		}
 	}
-	if (currentToAdd == CREGEX_MATCH_FAIL) {
+	if (i < parent -> minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	if (result != CREGEX_MATCH_FAIL) {
@@ -804,7 +838,6 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 		if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND | CREGEX_PATTERN_ALTERNATION_GROUP)) {
 			const char *temp = savePtr;
 			size_t captureGroupMatchCount;
-
 			if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
 			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
 				captureGroupMatchCount = internal_cregex_match_alternation(cursor, strStart, &temp);
@@ -812,7 +845,6 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKAHEAD)) captureGroupMatchCount = internal_cregex_match_lookahead(cursor, strStart, temp);
 			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKBEHIND)) captureGroupMatchCount = internal_cregex_match_lookbehind(cursor, strStart, temp);
 			else captureGroupMatchCount = CREGEX_MATCH_FAIL;
-
 			if (captureGroupMatchCount == CREGEX_MATCH_FAIL || (cursor -> next && internal_cregex_match_pattern_char(cursor->next, strStart, &temp) == CREGEX_MATCH_FAIL)) {
 				if (*savePtr) savePtr++;
 				else break;
@@ -857,6 +889,7 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 				start = ++savePtr;
 			} else {
 				RegexMatch endOfStringReturn = {0};
+				endOfStringReturn.matchLength = CREGEX_MATCH_FAIL;
 				endOfStringReturn.match = "\0";
 				return endOfStringReturn;
 			}
@@ -878,7 +911,7 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
 	RegexMatch ret = {0};
 	while (str == strStart || *(str-1)) {
 		RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
-		if (currentMatch.matchLength > ret.matchLength) {
+		if (currentMatch.matchLength != CREGEX_MATCH_FAIL && currentMatch.matchLength > ret.matchLength) {
 			cregex_destroy_match(ret);
 			ret = currentMatch;
 		} else {
@@ -889,12 +922,12 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
 	return ret;
 }
 
-CREGEX_EXPORT RegexMatchContainer cregex_match(const RegexPattern *compiledPattern, const char *str, const RegexFlag flags) {
+CREGEX_EXPORT RegexMatchContainer cregex_multi_match(const RegexPattern *compiledPattern, const char *str, const RegexFlag flags) {
 	RegexMatchContainer ret = {.matchCount = 0, .matches = (RegexMatch *)malloc(sizeof(*ret.matches))};
 	const char * const strStart = str;
-	while (str == strStart || *(str-1)) {
+	while (*str) {
 		RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
-		if (currentMatch.matchLength) {
+		if (currentMatch.matchLength != CREGEX_MATCH_FAIL && currentMatch.match) {
 			ret.matchCount++;
 			RegexMatch *matchReallocation = (RegexMatch *)realloc(ret.matches, ret.matchCount * sizeof(RegexMatch));
 			if (matchReallocation) {
@@ -904,8 +937,8 @@ CREGEX_EXPORT RegexMatchContainer cregex_match(const RegexPattern *compiledPatte
 				internal_cregex_compile_error("Match reallocation failed. Exiting");
 			}
 			ret.matches[ret.matchCount - 1] = currentMatch;
-			if (internal_cregex_has_flag(&flags, CREGEX_PERMUTED_MATCHES)) str = currentMatch.match + 1;
-			else str = currentMatch.match + currentMatch.matchLength;
+			if (internal_cregex_has_flag(&flags, CREGEX_PERMUTED_MATCHES)) str += 1;
+			else str += currentMatch.matchLength;
 		} else {
 			str++;
 		}

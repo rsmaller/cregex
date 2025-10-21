@@ -5,6 +5,18 @@ script_dir = os.getcwd()
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
+    r"\w{3}$",
+    r"a{2}+",
+    r"(1|9|2){3}",
+    r"(\d|-){3}",
+    r"(\d|a){3}",
+    r"(\d){3}",
+    r"\w{1,2}",
+    r"\w{,2}",
+    r"(\w){3}",
+    r"(\w{,2}){3}",
+    r"(\w{1,2}){3}",
+    r"(\w{2}){3}",
     r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",
     r"(ay|be|ce)",
     r"(?=a{3})b",

@@ -14,13 +14,17 @@ ELSE()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wpedantic -Werror -Wcast-qual -Wconversion -std=c11")
 ENDIF()
 
-IF (Link STREQUAL "static")
+IF (LINK STREQUAL "static")
     add_library(cregex STATIC ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
     target_compile_definitions(cregex PRIVATE CREGEX_STATIC)
 ELSE()
     add_library(cregex SHARED ${CMAKE_SOURCE_DIR}/src/cregex_impl.c)
 ENDIF()
 
+IF (EXAMPLETYPE STREQUAL "single")
+ELSEIF(EXAMPLETYPE STREQUAL "multi")
+     target_compile_definitions(exampleregex PRIVATE CREGEX_EXAMPLE_MULTI_MATCH)
+ENDIF()
 
 target_include_directories(cregex PRIVATE ./include)
 
