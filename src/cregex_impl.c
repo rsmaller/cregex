@@ -956,12 +956,12 @@ CREGEX_EXPORT RegexMatchContainer cregex_multi_match(const RegexPattern *compile
 	return ret;
 }
 
-CREGEX_EXPORT void cregex_print_match_container(const RegexMatchContainer container) {
+CREGEX_EXPORT void cregex_print_match_container(const RegexMatchContainer container, const RegexFlag flags) {
 	internal_cregex_output("Regex Container:\n");
 	internal_cregex_output("\tMatch Count: %zu\n", container.matchCount);
 	if (container.matchCount) internal_cregex_output("\tMatches:\n");
 	for (size_t i = 0; i < container.matchCount; i++) {
-		if (container.matches[i].matchLength) {
+		if (container.matches[i].matchLength || internal_cregex_has_flag(&flags, CREGEX_PRINT_ZERO_LENGTH_MATCHES)) {
 			internal_cregex_output("\t\t\"");
 			cregex_print_match(container.matches[i]);
 			internal_cregex_output("\" (Length: %zu)\n", container.matches[i].matchLength);

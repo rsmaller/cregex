@@ -18,7 +18,7 @@ int main(const int argc, const char **argv) {
 #ifdef CREGEX_EXAMPLE_MULTI_MATCH
     RegexMatchContainer myMatch = cregex_multi_match(pattern, fileText, CREGEX_PERMUTED_MATCHES);
     clock_t end = clock();
-    cregex_print_match_container(myMatch);
+    cregex_print_match_container(myMatch, 0);
     cregex_destroy_match_container(myMatch);
 #else
     RegexMatch myMatch = cregex_longest_match(pattern, fileText, fileText);
