@@ -145,6 +145,10 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count(RegexPattern *toSet, const 
 	if (internal_cregex_has_flag(&toSet->flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND) && (*minInstanceCount != 1 || *maxInstanceCount != 1)) {
 		internal_cregex_compile_error("Lookaheads and lookbehinds do not support variadic lengths in this regex implementation");
 	}
+	if (**str_internal == '?' && *(*str_internal-1) != '\\') {
+		internal_cregex_set_flag(&toSet->flags, CREGEX_PATTERN_LAZY_MATCH);
+		(*str_internal)++;
+	}
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_char_class(RegexPattern *patternToAdd, const char **pattern) {
