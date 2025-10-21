@@ -8,7 +8,7 @@ int main(const int argc, const char **argv) {
         printf("Usage: %s <filepath> <pattern>\n", argv[0]);
         exit(0);
     }
-    char *fileText = cregex_file_to_str(argv[1]);
+    char *fileText = cregex_file_to_str(argv[1], 0);
     const char *patternStr = argv[2];
     printf("\nMatching from file %s\n", argv[1]);
     printf("Pattern is \"%s\"\n", patternStr);

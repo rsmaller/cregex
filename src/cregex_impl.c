@@ -994,14 +994,15 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 	internal_cregex_output("\n");
 }
 
-CREGEX_EXPORT char *cregex_file_to_str(const char *path) {
+CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max) {
 	FILE *internalFileHandle = fopen(path, "r");
 	if (!internalFileHandle) internal_cregex_compile_error("Failed to grab file at path %s", path);
 	RegexFileString fileAllocation = {.buffer = calloc(4, sizeof(char)), .currentIndex = -1, .size = 4};
 	if (!fileAllocation.buffer) internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
 	char **ret = &fileAllocation.buffer; // For static code analyzer to keep track of memory (and hopefully not throw false leak warnings)
 	char currentChar = 0;
-	while ((currentChar = (char)fgetc(internalFileHandle)) != EOF) {
+	if (max == 0) max = INT32_MAX;
+	while (fileAllocation.currentIndex < max && (currentChar = (char)fgetc(internalFileHandle)) != EOF) {
 		fileAllocation.buffer[++fileAllocation.currentIndex] = currentChar;
 		if (fileAllocation.currentIndex >= (int)fileAllocation.size / 2) {
 			void *reallocation = realloc(fileAllocation.buffer, (fileAllocation.size *= 2) * sizeof(char));

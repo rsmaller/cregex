@@ -64,7 +64,7 @@ typedef struct RegexMatchContainer {
 //  SECTION: User-Facing Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_EXPORT char *cregex_file_to_str(const char *path);
+CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max);
 
 CREGEX_EXPORT RegexPattern *cregex_compile_pattern(const char *pattern);
 
