@@ -717,7 +717,6 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 		}
 		cursor = parent -> child;
 		if (currentToAdd == CREGEX_MATCH_FAIL) {
-			result = CREGEX_MATCH_FAIL;
 			break;
 		}
 	}
