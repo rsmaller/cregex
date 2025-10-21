@@ -5,6 +5,7 @@ script_dir = os.getcwd()
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
+    r"^\w{2}",
     r"\w{3}$",
     r"a{2}+",
     r"(1|9|2){3}",
