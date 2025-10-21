@@ -9,6 +9,10 @@ int main(const int argc, const char **argv) {
         exit(0);
     }
     char *fileText = cregex_file_to_str(argv[1], 0);
+    if (!fileText) {
+        printf("Failed to open file %s, exiting\n", argv[1]);
+        exit(0);
+    }
     const char *patternStr = argv[2];
     printf("\nMatching from file %s\n", argv[1]);
     printf("Pattern is \"%s\"\n", patternStr);
@@ -21,7 +25,7 @@ int main(const int argc, const char **argv) {
     cregex_print_match_container(myMatch, 0);
     cregex_destroy_match_container(myMatch);
 #else
-    RegexMatch myMatch = cregex_longest_match(pattern, fileText, fileText);
+    RegexMatch myMatch = cregex_longest_match(pattern, fileText);
     clock_t end = clock();
     printf("Match: ");
     cregex_print_match_with_groups(myMatch);

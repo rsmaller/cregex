@@ -23,6 +23,7 @@ testCases = [
     r"(\w{,2}){3}",
     r"(\w{1,2}){3}",
     r"(\w{2}){3}",
+    r"\d{1,3}(\.\d{1,3}){3}",
     r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",
     r"(ay|be|ce)",
     r"(?=a{3})b",
@@ -99,7 +100,7 @@ def fetch_executable():
         os.remove(os.getcwd() + "/" + filepath)
     except FileNotFoundError:
         pass
-    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug")
+    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DEXAMPLE_TYPE=multi")
     os.system("cmake --build .")
     potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
     to_use = ""

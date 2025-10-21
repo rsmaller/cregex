@@ -826,7 +826,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 	return CREGEX_MATCH_FAIL;
 }
 
-CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern, const char * const strStart, const char *str) {
+CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char * const strStart, const char *str) {
 	RegexMatch returnVal = {0};
 	if (!compiledPattern || !str) {
 		returnVal.matchLength = CREGEX_MATCH_FAIL;
@@ -877,10 +877,6 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 			else break;
 			continue;
 		}
-		// if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
-		// 	cursor = cursor -> next;
-		// 	continue;
-		// }
 		const size_t currentMatchCount = internal_cregex_match_pattern_char(cursor, strStart, &savePtr);
 		if (!(currentMatchCount >= cursor -> minInstanceCount && currentMatchCount <= cursor -> maxInstanceCount)) {
 			cursor = compiledPattern;
@@ -911,10 +907,10 @@ CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern,
 	return returnVal;
 }
 
-CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, const char *str) {
+CREGEX_IMPL_FUNC RegexMatch internal_cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, const char *str) {
 	RegexMatch ret = {0};
 	while (str == strStart || *(str-1)) {
-		RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
+		RegexMatch currentMatch = internal_cregex_first_match(compiledPattern, strStart, str);
 		if (currentMatch.matchLength != CREGEX_MATCH_FAIL && currentMatch.matchLength > ret.matchLength) {
 			cregex_destroy_match(ret);
 			ret = currentMatch;
@@ -926,12 +922,20 @@ CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPatter
 	return ret;
 }
 
+CREGEX_EXPORT RegexMatch cregex_longest_match(const RegexPattern *compiledPattern, const char *str) {
+	return internal_cregex_longest_match(compiledPattern, str, str);
+}
+
+CREGEX_EXPORT RegexMatch cregex_first_match(const RegexPattern *compiledPattern, const char *str) {
+	return internal_cregex_first_match(compiledPattern, str, str);
+}
+
 CREGEX_EXPORT RegexMatchContainer cregex_multi_match(const RegexPattern *compiledPattern, const char *str, const RegexFlag flags) {
 	RegexMatchContainer ret = {.matchCount = 0, .matches = (RegexMatch *)malloc(sizeof(*ret.matches))};
 	const char * const strStart = str;
 	const char * const strEnd = str + strlen(str);
 	while (str < strEnd) {
-		RegexMatch currentMatch = cregex_first_match(compiledPattern, strStart, str);
+		RegexMatch currentMatch = internal_cregex_first_match(compiledPattern, strStart, str);
 		if (currentMatch.matchLength != CREGEX_MATCH_FAIL && currentMatch.match) {
 			ret.matchCount++;
 			RegexMatch *matchReallocation = (RegexMatch *)realloc(ret.matches, ret.matchCount * sizeof(RegexMatch));
@@ -993,9 +997,16 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 	internal_cregex_output("\n");
 }
 
+CREGEX_EXPORT char *cregex_allocate_match(RegexMatch container) {
+	char *allocation = (char *)malloc((container.matchLength + 1) * sizeof(char));
+	strncpy(allocation, container.match, container.matchLength);
+	allocation[container.matchLength] = '\0';
+	return allocation;
+}
+
 CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max) {
 	FILE *internalFileHandle = fopen(path, "r");
-	if (!internalFileHandle) internal_cregex_compile_error("Failed to grab file at path %s", path);
+	if (!internalFileHandle) return NULL;
 	RegexFileString fileAllocation = {.buffer = calloc(4, sizeof(char)), .currentIndex = -1, .size = 4};
 	if (!fileAllocation.buffer) internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
 	char **ret = &fileAllocation.buffer; // For static code analyzer to keep track of memory (and hopefully not throw false leak warnings)
