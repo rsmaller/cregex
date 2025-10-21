@@ -997,8 +997,9 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 CREGEX_EXPORT char *cregex_file_to_str(const char *path) {
 	FILE *internalFileHandle = fopen(path, "r");
 	if (!internalFileHandle) internal_cregex_compile_error("Failed to grab file at path %s", path);
-	RegexFileString fileAllocation = {calloc(4, sizeof(char)), -1, 4};
+	RegexFileString fileAllocation = {.buffer = calloc(4, sizeof(char)), .currentIndex = -1, .size = 4};
 	if (!fileAllocation.buffer) internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
+	char **ret = &fileAllocation.buffer; // For static code analyzer to keep track of memory (and hopefully not throw false leak warnings)
 	char currentChar = 0;
 	while ((currentChar = (char)fgetc(internalFileHandle)) != EOF) {
 		fileAllocation.buffer[++fileAllocation.currentIndex] = currentChar;
@@ -1008,18 +1009,18 @@ CREGEX_EXPORT char *cregex_file_to_str(const char *path) {
 				free(fileAllocation.buffer);
 				internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);	
 			}
-			fileAllocation.buffer = reallocation; 
-		} 
+			fileAllocation.buffer = reallocation;
+		}
 	}
 	fclose(internalFileHandle);
 	fileAllocation.buffer[++fileAllocation.currentIndex] = '\0';
-	void *reallocation = realloc(fileAllocation.buffer, (size_t)fileAllocation.currentIndex + 1 * sizeof(char));	
+	void *reallocation = realloc(fileAllocation.buffer, (size_t)fileAllocation.currentIndex + 1 * sizeof(char));
 	if (!reallocation) {
 		free(fileAllocation.buffer);
 		internal_cregex_compile_error("Heap allocation failed in loading contents of file %s", path);
 	}
-	fileAllocation.buffer = reallocation;
-	return fileAllocation.buffer;
+	*ret = reallocation;
+	return *ret;
 }
 
 CREGEX_EXPORT void cregex_destroy_pattern(RegexPattern *head) { // NOLINT

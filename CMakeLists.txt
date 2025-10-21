@@ -26,8 +26,6 @@ ELSEIF(EXAMPLETYPE STREQUAL "multi")
      target_compile_definitions(exampleregex PRIVATE CREGEX_EXAMPLE_MULTI_MATCH)
 ENDIF()
 
-target_include_directories(cregex PRIVATE ./include)
-
 IF (Sanitize STREQUAL "address")
     IF (MSVC)
         target_compile_options(exampleregex PRIVATE /fsanitize=address)
@@ -37,35 +35,31 @@ IF (Sanitize STREQUAL "address")
     ENDIF()
 ENDIF()
 
+target_include_directories(cregex PRIVATE ./include)
 target_link_libraries(exampleregex cregex)
 
 # CMake Package Generator
-
 install(TARGETS cregex
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
 )
-
 install(DIRECTORY include/
         DESTINATION include/cregex/
 )
-
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Ryan Smaller")
+set(CPACK_PACKAGE_MAINTAINER "Ryan Smaller")
 set(CPACK_PACKAGE_NAME "libcregex")
 set(CPACK_PACKAGE_VERSION ${CREGEX_PROJECT_VERSION}-${CREGEX_PROJECT_REVISION})
-set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_amd64)
+set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION "A lightweight regex compiler and API written in C.")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
+set(CPACK_PACKAGE_DEPENDS "libc6")
 set_target_properties(cregex PROPERTIES
         VERSION ${CREGEX_PROJECT_VERSION}
         SOVERSION 0
 )
-
 include(CPack)
 
 # Unit Tests
-
 find_package(Python3)
 add_custom_target(unittest COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/test/unittest.py
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
