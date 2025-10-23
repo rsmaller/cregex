@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_compile_error(const char * const format, ...) {
+CREGEX_IMPL_FUNC CREGEX_NORETURN inline void internal_cregex_compile_error(const char * const format, ...) {
 	va_list args;
 	va_start(args, format);
 	char *msgStart = "CRegex Compile Error: ";
@@ -22,26 +22,26 @@ CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_compile_error(const char *
 	exit(CREGEX_COMPILE_FAILURE);
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_output(const char * const format, ...) {
+CREGEX_IMPL_FUNC inline void internal_cregex_output(const char * const format, ...) {
 	va_list args;
 	va_start(args, format);
 	vprintf(format, args);
 	va_end(args);
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_set_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC inline void internal_cregex_set_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck |= flag;
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_clear_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC inline void internal_cregex_clear_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck &= ~flag;
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_toggle_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC inline void internal_cregex_toggle_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck ^= flag;
 }
 
-CREGEX_IMPL_FUNC RegexFlag internal_cregex_has_flag(const RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC inline RegexFlag internal_cregex_has_flag(const RegexFlag *toCheck, const RegexFlag flag) {
 	return *toCheck & flag;
 }
 
@@ -281,7 +281,6 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *left) {
 	if (!parent || !left) return;
 	if (parent -> child) {
-		//free(parent -> child);
 		parent -> child = NULL;
 	}
 	internal_cregex_set_flag(&parent -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
@@ -783,11 +782,6 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_lookbehind(const RegexPattern *com
 		ret += currentItem;
 		compiledPattern = compiledPattern -> next;
 	}
-	// if (negativity) {
-	// 	if (ret == CREGEX_MATCH_FAIL && (size_t)(str - strStart) >= lookbehindLength) ret = lookbehindLength;
-	// 	else if (ret == CREGEX_MATCH_FAIL) ret = (size_t)(str - strStart);
-	// 	else ret = CREGEX_MATCH_FAIL;
-	// }
 	if ((!negativity && currentItem == CREGEX_MATCH_FAIL) || (negativity && currentItem != CREGEX_MATCH_FAIL)) ret = CREGEX_MATCH_FAIL;
 	return ret;
 }
@@ -1016,6 +1010,7 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 			internal_cregex_output("\"");
 		}
 	}
+
 	internal_cregex_output("\n");
 }
 
