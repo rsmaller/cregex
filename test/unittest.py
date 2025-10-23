@@ -17,7 +17,7 @@ testCases = [
 	r"y(b|e)", r"\d{1,4}", r"(?<=\n)\w{4} \d{2}", r"^\w{3}", r"\d ?\d", r"\d*", r"\d+",
 	r"\d\d?\d", r"(\w{3})", r"[a-z]{2}", r"[^a-z]{2}", r"[a^z]{2}", r"\d{2}", r"\d{2}(?= )",
 	r"(?<!a)\w{2}", r"[aaaaaaaaa", r"aaaaaaa]", r"a{aaaaa", r"a}", r"{3}", r"\w$", r"\w$a",
-	r"\w$b", r"\w (?=6)\d{2}", r"\d", r"\w{2}", r"\A\w{2}"
+	r"\w$b", r"\w (?=6)\d{2}", r"\d", r"\w{2}", r"\A\w{2}", r"(\w{2}|\d){3}",
 ]
 
 def fetch_executable():

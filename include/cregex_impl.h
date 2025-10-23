@@ -15,14 +15,17 @@
     #define CREGEX_IMPL_FUNC static __attribute__((used))
     #define CREGEX_IMPL_FUNC_H static __attribute__((used))
     #define CREGEX_NORETURN __attribute__((noreturn))
+    #define CREGEX_INLINE inline __attribute__((always_inline))
 #elif defined(_MSC_VER)
     #define CREGEX_IMPL_FUNC static
     #define CREGEX_IMPL_FUNC_H static
     #define CREGEX_NORETURN __declspec(noreturn)
+    #define CREGEX_INLINE inline
 #else
     #define CREGEX_IMPL_FUNC static
     #define CREGEX_IMPL_FUNC_H static
     #define CREGEX_NORETURN
+    #define CREGEX_INLINE inline
 #endif
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

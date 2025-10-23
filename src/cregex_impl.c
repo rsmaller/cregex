@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-CREGEX_IMPL_FUNC CREGEX_NORETURN inline void internal_cregex_compile_error(const char * const format, ...) {
+CREGEX_IMPL_FUNC CREGEX_NORETURN CREGEX_INLINE void internal_cregex_compile_error(const char * const format, ...) {
 	va_list args;
 	va_start(args, format);
 	char *msgStart = "CRegex Compile Error: ";
@@ -22,30 +22,30 @@ CREGEX_IMPL_FUNC CREGEX_NORETURN inline void internal_cregex_compile_error(const
 	exit(CREGEX_COMPILE_FAILURE);
 }
 
-CREGEX_IMPL_FUNC inline void internal_cregex_output(const char * const format, ...) {
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_output(const char * const format, ...) {
 	va_list args;
 	va_start(args, format);
 	vprintf(format, args);
 	va_end(args);
 }
 
-CREGEX_IMPL_FUNC inline void internal_cregex_set_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_set_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck |= flag;
 }
 
-CREGEX_IMPL_FUNC inline void internal_cregex_clear_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_clear_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck &= ~flag;
 }
 
-CREGEX_IMPL_FUNC inline void internal_cregex_toggle_flag(RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_toggle_flag(RegexFlag *toCheck, const RegexFlag flag) {
 	*toCheck ^= flag;
 }
 
-CREGEX_IMPL_FUNC inline RegexFlag internal_cregex_has_flag(const RegexFlag *toCheck, const RegexFlag flag) {
+CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_has_flag(const RegexFlag *toCheck, const RegexFlag flag) {
 	return *toCheck & flag;
 }
 
-CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
+CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
 	switch (toCheck) {
 		case '.':
 		case '$':
@@ -65,7 +65,7 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_non_escaped_char_type(const char 
 	}
 }
 
-CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
+CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_char_class_char_type(const char toCheck) {
 	switch (toCheck) {
 		case '\\':
 		case '-':
@@ -76,7 +76,7 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_char_class_char_type(const char t
 	}
 }
 
-CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_capture_group_type(const char toCheck) {
+CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_capture_group_type(const char toCheck) {
 	switch (toCheck) {
 		case '.':
 		case '{':
@@ -92,6 +92,14 @@ CREGEX_IMPL_FUNC RegexFlag internal_cregex_get_capture_group_type(const char toC
 		default:
 			return 0;
 	}
+}
+
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_free_heap_stack(const HeapFreeStack stack) {
+	if (!stack.pointers) return;
+	for (size_t i=0; i<stack.count; i++) {
+		if (stack.pointers[i]) free(stack.pointers[i]);
+	}
+	free(stack.pointers);
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_set_char_count(RegexPattern *toSet, const char **str) {
@@ -138,9 +146,6 @@ CREGEX_IMPL_FUNC void internal_cregex_set_char_count(RegexPattern *toSet, const 
 	}
 	if (*maxInstanceCount == 0) {
 		*maxInstanceCount = *minInstanceCount;
-	}
-	if (*maxInstanceCount == CREGEX_INF_COUNT) {
-		(*maxInstanceCount)--;
 	}
 	if (internal_cregex_has_flag(&toSet->flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND) && (*minInstanceCount != 1 || *maxInstanceCount != 1)) {
 		internal_cregex_compile_error("Lookaheads and lookbehinds do not support variadic lengths in this regex implementation");
@@ -292,14 +297,6 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, 
 	parent -> alternations = (RegexPattern **)calloc(1, sizeof(RegexPattern *));
 	parent -> alternations[0] = left;
 	parent -> alternationCount = 1;
-}
-
-CREGEX_IMPL_FUNC void internal_cregex_free_heap_stack(const HeapFreeStack stack) {
-	if (!stack.pointers) return;
-	for (size_t i=0; i<stack.count; i++) {
-		if (stack.pointers[i]) free(stack.pointers[i]);
-	}
-	free(stack.pointers);
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_adjust_alternation_group(RegexPattern *parent) {
@@ -510,7 +507,11 @@ CREGEX_IMPL_FUNC void internal_cregex_print_pattern_char(const RegexPattern patt
 	if (!internal_cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS | CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND | CREGEX_PATTERN_ALTERNATION_GROUP)) {
 		internal_cregex_output("\"%c\" ", patternChar.primaryChar);
 	}
-	internal_cregex_output("(Flags: %" PRIu64 " , min: %zu, max: %zu", patternChar.flags, patternChar.minInstanceCount, patternChar.maxInstanceCount);
+	internal_cregex_output("(Flags: %" PRIu64 ", min: %zu, ", patternChar.flags, patternChar.minInstanceCount);
+	if (patternChar.maxInstanceCount == CREGEX_INF_COUNT)
+		internal_cregex_output("max: INF");
+	else
+		internal_cregex_output("max: %zu", patternChar.maxInstanceCount);
 	if (internal_cregex_has_flag(&patternChar.flags, CREGEX_PATTERN_METACHARACTER_CLASS_RANGE)) {
 		internal_cregex_output(" char min: %c, char max: %c", patternChar.charClassRangeMin, patternChar.charClassRangeMax);
 	}
