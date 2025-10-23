@@ -1,4 +1,4 @@
-set(CREGEX_PROJECT_VERSION "1.0")
+set(CREGEX_PROJECT_VERSION "2.0")
 set(CREGEX_PROJECT_REVISION "0")
 cmake_minimum_required(VERSION 3.11.0)
 project(exampleregex VERSION ${CREGEX_PROJECT_VERSION})
