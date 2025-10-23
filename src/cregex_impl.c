@@ -741,18 +741,16 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_lookahead(const RegexPattern *comp
 		negativity = 0;
 	}
 	if (!compiledPattern || !internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_LOOKAHEAD)) {
-		return 1;
+		return 0;
 	}
 	compiledPattern = compiledPattern -> child;
-	size_t ret = 1;
-	while (compiledPattern && ret != CREGEX_MATCH_FAIL) {
-		ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &str);
+	size_t ret = 0;
+	size_t currentItem = 0;
+	while (compiledPattern && (currentItem = internal_cregex_match_pattern_char(compiledPattern, strStart, &str)) != CREGEX_MATCH_FAIL) {
+		ret += currentItem;
 		compiledPattern = compiledPattern -> next;
 	}
-	if (negativity) {
-		if (ret == CREGEX_MATCH_FAIL) ret = 1;
-		else ret = CREGEX_MATCH_FAIL;
-	}
+	if ((!negativity && currentItem == CREGEX_MATCH_FAIL) || (negativity && currentItem != CREGEX_MATCH_FAIL)) ret = CREGEX_MATCH_FAIL;
 	return ret;
 }
 
@@ -767,26 +765,30 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_lookbehind(const RegexPattern *com
 		negativity = 0;
 	}
 	compiledPattern = compiledPattern -> child;
-	size_t ret = 1;
+	size_t ret = 0;
 	size_t lookbehindLength = 0;
+	size_t currentItem = 0;
 	const RegexPattern *cursor = compiledPattern;
 	while (cursor) {
 		lookbehindLength += cursor -> minInstanceCount;
 		cursor = cursor -> next;
 	}
 	if ((size_t)(str - strStart) < lookbehindLength) {
-		ret = CREGEX_MATCH_FAIL;
+		if (negativity) return (size_t)str - (size_t)strStart;
+		return CREGEX_MATCH_FAIL;
+
 	}
 	const char *strCursor = str - lookbehindLength;
-	while (compiledPattern && ret != CREGEX_MATCH_FAIL) {
-		ret = internal_cregex_match_pattern_char(compiledPattern, strStart, &strCursor);
+	while (compiledPattern && (currentItem = internal_cregex_match_pattern_char(compiledPattern, strStart, &strCursor)) != CREGEX_MATCH_FAIL) {
+		ret += currentItem;
 		compiledPattern = compiledPattern -> next;
 	}
-	if (negativity) {
-		if (ret == CREGEX_MATCH_FAIL && (size_t)(str - strStart) >= lookbehindLength) ret = lookbehindLength;
-		else if (ret == CREGEX_MATCH_FAIL) ret = (size_t)(str - strStart);
-		else ret = CREGEX_MATCH_FAIL;
-	}
+	// if (negativity) {
+	// 	if (ret == CREGEX_MATCH_FAIL && (size_t)(str - strStart) >= lookbehindLength) ret = lookbehindLength;
+	// 	else if (ret == CREGEX_MATCH_FAIL) ret = (size_t)(str - strStart);
+	// 	else ret = CREGEX_MATCH_FAIL;
+	// }
+	if ((!negativity && currentItem == CREGEX_MATCH_FAIL) || (negativity && currentItem != CREGEX_MATCH_FAIL)) ret = CREGEX_MATCH_FAIL;
 	return ret;
 }
 

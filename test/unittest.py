@@ -5,6 +5,7 @@ script_dir = os.getcwd()
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
+    r"\.(?=\d{3})",
     r"(\d| )?\w",
     r"(\d)?\w",
     r"(\d)*",
@@ -100,7 +101,8 @@ def fetch_executable():
         os.remove(os.getcwd() + "/" + filepath)
     except FileNotFoundError:
         pass
-    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DEXAMPLE_TYPE=multi")
+    # os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DEXAMPLE_TYPE=multi")
+    os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DEXAMPLE_TYPE=single")
     os.system("cmake --build .")
     potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
     to_use = ""
