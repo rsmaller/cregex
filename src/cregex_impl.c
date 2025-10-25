@@ -242,10 +242,10 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 		if (!**pattern) {
 			internal_cregex_compile_error("Character class not properly terminated!");
 		}
-		if (**pattern == '|' && *(*pattern-1) != '\\') {
-			internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
-		}
 		if (**pattern == ')' && *pattern > patternStart && *(*pattern-1) != '\\') {
+			cursor = cursor -> prev;
+			free(cursor -> next);
+			cursor -> next = NULL;
 			break;
 		}
 		if (**pattern == '(' && *pattern > patternStart && *(*pattern-1) != '\\') {
@@ -269,29 +269,27 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_lookahead(RegexPattern *patternToA
 			cursor -> charClassLength = 0;
 			cursor -> child = NULL;
 		}
+		if (cursor -> primaryChar == '|' && internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER)) {
+			if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKBEHIND)) internal_cregex_compile_error("Lookbehinds do not support variadic length matches\n");
+			internal_cregex_set_flag(&patternToAdd -> flags, CREGEX_PATTERN_ALTERNATION_GROUP);
+		}
 		(*pattern)++;
 		internal_cregex_set_char_count(cursor, pattern);
 		if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKBEHIND) && cursor -> minInstanceCount != cursor -> maxInstanceCount) {
 			internal_cregex_compile_error("Lookbehinds do not support variadic length matches\n");
 		}
-		if (**pattern != ')' && **pattern != '\\') {
-			cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-			cursor -> next -> prev = cursor;
-			cursor = cursor -> next;
-		} else {
-			cursor -> next = NULL;
-		}
+		cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+		cursor -> next -> prev = cursor;
+		cursor = cursor -> next;
 	}
 	if (**pattern != ')'  || *(*pattern-1) == '\\') {
 		internal_cregex_compile_error("Lookbehind/lookahead not properly terminated");
 	}
 	if (internal_cregex_has_flag(&patternToAdd -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
-		patternToAdd -> alternationCount = 1;
-		patternToAdd -> alternations = (RegexPattern**)calloc(1, sizeof(RegexPattern*));
-		patternToAdd -> alternations[0] = patternToAdd -> child;
-		patternToAdd -> child = NULL;
+		internal_cregex_compile_alternation(patternToAdd, patternToAdd -> child);
 		internal_cregex_adjust_alternation_group(patternToAdd);
 	}
+	if (internal_cregex_has_flag(&patternToAdd -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) internal_cregex_clear_flag(&patternToAdd -> flags, CREGEX_PATTERN_SAVE_GROUP);
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_alternation(RegexPattern *parent, RegexPattern *left) {
@@ -473,14 +471,11 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 	ret.maxInstanceCount = 1;
 	if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_CHAR_CLASS)) {
 		internal_cregex_compile_char_class(&ret, str);
-	}
-	if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_CAPTURE_GROUP)) {
+	} else if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_CAPTURE_GROUP)) {
 		internal_cregex_compile_capture_group(&ret, str);
-	}
-	if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKAHEAD)) {
+	} else if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_LOOKAHEAD)) {
 		internal_cregex_compile_lookahead(&ret, str);
-	}
-	if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_END_ANCHOR)) {
+	} else if (internal_cregex_has_flag(&state, CREGEX_STATE_INSIDE_END_ANCHOR)) {
 		internal_cregex_compile_end_anchor(&ret);
 	}
 	(*str)++;
@@ -551,7 +546,7 @@ CREGEX_IMPL_FUNC void internal_cregex_print_capture_group(const RegexPattern *he
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_print_lookahead(const RegexPattern *head) { // NOLINT
-	if (!internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
+	if (!internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_ALTERNATION_GROUP) || !head -> alternations) {
 		RegexPattern *cursor = head -> child;
 		while (cursor) {
 			if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS)) {
@@ -560,14 +555,15 @@ CREGEX_IMPL_FUNC void internal_cregex_print_lookahead(const RegexPattern *head) 
 			internal_cregex_print_pattern_char(*cursor);
 			cursor = cursor -> next;
 		}
+		internal_cregex_output("NULL))) ");
 	} else {
 		internal_cregex_print_compiled_pattern(head -> alternations[0]);
 		for (size_t i = 1; i < head -> alternationCount; i++) {
-			internal_cregex_output("OR ");
+			internal_cregex_output(" OR ");
 			internal_cregex_print_compiled_pattern(head -> alternations[i]);
 		}
+		internal_cregex_output("))) ");
 	}
-	internal_cregex_output("NULL))) ");
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_print_alternation_group(const RegexPattern *head) { // NOLINT
@@ -575,7 +571,7 @@ CREGEX_IMPL_FUNC void internal_cregex_print_alternation_group(const RegexPattern
 	internal_cregex_output("|||Alternation Group: ");
 	internal_cregex_print_compiled_pattern(head -> alternations[0]);
 	for (size_t i = 1; i < head -> alternationCount; i++) {
-		internal_cregex_output("OR ");
+		internal_cregex_output(" OR ");
 		internal_cregex_print_compiled_pattern(head -> alternations[i]);
 	}
 	internal_cregex_output("||| ");
@@ -587,7 +583,7 @@ CREGEX_IMPL_FUNC void internal_cregex_print_compiled_pattern(const RegexPattern 
 			internal_cregex_print_char_class(head);
 		} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_CAPTURE_GROUP)) {
 			internal_cregex_print_capture_group(head);
-		} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_LOOKAHEAD) || internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
+		} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND | CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
 			internal_cregex_output("(((");
 			if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_NEGATIVE_MATCH)) {
 				internal_cregex_output("Negative ");
@@ -596,19 +592,18 @@ CREGEX_IMPL_FUNC void internal_cregex_print_compiled_pattern(const RegexPattern 
 				internal_cregex_output("Lookahead: ");
 			} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_LOOKBEHIND)) {
 				internal_cregex_output("Lookbehind: ");
+			} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
+				internal_cregex_output("Dummy: ");
 			}
 			internal_cregex_print_lookahead(head);
-		} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
-			internal_cregex_output("(((Dummy: ");
-			internal_cregex_print_lookahead(head);
-		} else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
+		}  else if (internal_cregex_has_flag(&head -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
 			internal_cregex_print_alternation_group(head);
 		}
 		internal_cregex_print_pattern_char(*head);
 		head = head -> next;
 		if (!head) break;
 	}
-	internal_cregex_output("NULL ");
+	internal_cregex_output("NULL");
 }
 
 CREGEX_IMPL_FUNC int internal_cregex_is_numeric(const char toMatch) {
@@ -834,7 +829,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
 				*str += max;
-				if ((compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
+				if ((compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == 'Z' || compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
 				return max;
 			}
 		}
@@ -873,10 +868,9 @@ CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *comp
 		if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_LOOKBEHIND | CREGEX_PATTERN_ALTERNATION_GROUP | CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
 			const char *temp = savePtr;
 			size_t captureGroupMatchCount;
-			if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
-			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
+			if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
 				captureGroupMatchCount = internal_cregex_match_alternation(cursor, strStart, &temp);
-			}
+			} else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) captureGroupMatchCount = internal_cregex_match_capture_group(cursor, strStart, &temp);
 			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKAHEAD)) captureGroupMatchCount = internal_cregex_match_lookahead(cursor, strStart, temp);
 			else if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_LOOKBEHIND)) captureGroupMatchCount = internal_cregex_match_lookbehind(cursor, strStart, temp);
 			else captureGroupMatchCount = CREGEX_MATCH_FAIL;
