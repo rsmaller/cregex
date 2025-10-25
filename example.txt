@@ -1,5 +1,9 @@
-This is an example text file. If you would like to check the contents of this file, for regular expressions, go ahead!
-
+regularexpression
+Regular Expression
+RegEx
+regexp
+regexpression
+regexpr
 Hopefully this works because regex is very difficult. Here are some test values:
 
 8f

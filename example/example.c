@@ -25,10 +25,13 @@ int main(const int argc, const char **argv) {
     cregex_print_match_container(myMatch, 0);
     cregex_destroy_match_container(myMatch);
 #else
-    RegexMatch myMatch = cregex_longest_match(pattern, fileText);
+    RegexMatch firstMatch = cregex_first_match(pattern, fileText);
+    RegexMatch longestMatch = cregex_longest_match(pattern, fileText);
     clock_t end = clock();
-    printf("Match: ");
-    cregex_print_match_with_groups(myMatch);
+    printf("First Match: ");
+    cregex_print_match_with_groups(firstMatch);
+    printf("Longest Match: ");
+    cregex_print_match_with_groups(longestMatch);
 #endif
     printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cregex_destroy_pattern(pattern);

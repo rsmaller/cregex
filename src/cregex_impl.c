@@ -416,7 +416,8 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
 }
 
 CREGEX_IMPL_FUNC void internal_cregex_compile_end_anchor(RegexPattern *patternToAdd) {
-	internal_cregex_set_flag(&patternToAdd->flags, CREGEX_PATTERN_LOOKAHEAD);
+	internal_cregex_set_flag(&patternToAdd->flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_END_ANCHOR);
+	patternToAdd -> primaryChar = '$';
 	patternToAdd -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
 	RegexPattern *cursor = patternToAdd -> child;
 	cursor -> minInstanceCount = 1;
@@ -664,7 +665,9 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
 
 CREGEX_IMPL_FUNC int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, const size_t count, const char * const strStart, const char **str) {
 	int ret = 1;
-	if (count == 0) return ret;
+	if (count == 0) {
+		return ret;
+	}
 	for (size_t i=0; i<count; i++) {
 		ret = ret && internal_cregex_compare_single_char(patternChar, matchAgainst[i], strStart, str);
 	}
@@ -688,28 +691,30 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *clas
 CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, const char **str) {// NOLINT
 	if (!parent) return CREGEX_MATCH_FAIL;
 	size_t result = 0;
-	const char *strCopy = *str;
 	size_t currentToAdd = CREGEX_MATCH_FAIL;
 	size_t i=0;
-	int alternationMatched = 0;
 	for (i=0; i<parent -> maxInstanceCount; i++) {
-		alternationMatched = 0;
+		size_t longestIterationMatch = 0;
+		int alternationMatched = 0;
 		for (size_t j=0; j<parent -> alternationCount; j++) {
+			const char *strCopy = *str + result;
+			size_t currentMatch = 0;
 			RegexPattern *cursor = parent -> alternations[j];
 			while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-				result += currentToAdd;
+				currentMatch += currentToAdd;
 				cursor = cursor -> next;
 			}
 			if (currentToAdd != CREGEX_MATCH_FAIL) {
 				alternationMatched = 1;
-				break;
+				if (currentMatch > longestIterationMatch) longestIterationMatch = currentMatch;
 			}
 		}
 		if (!alternationMatched) {
 			break;
 		}
+		result += longestIterationMatch;
 	}
-	if (i < parent -> minInstanceCount) {
+	if (i+1 < parent -> minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	if (result != CREGEX_MATCH_FAIL) {
@@ -829,10 +834,16 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
 				*str += max;
-				if ((compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == 'Z' || compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
+				if ((compiledPattern -> primaryChar == 'A'|| compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) {
+					(*str)--;
+				}
 				return max;
 			}
 		}
+	}
+	const char *zeroLengthTest = *str;
+	if (min == 0 && max == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
+		return 0;
 	}
 	goto end;
 	lazyLoop: for (;min <= max && min + 1 > min; min++) { // Implement lazy matching logic here
@@ -883,6 +894,9 @@ CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *comp
 				returnVal.groups = NULL;
 				returnVal.groupCount = 0;
 				continue;
+			}
+			if (internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_END_ANCHOR)) {
+				savePtr--;
 			}
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_SAVE_GROUP)) {
 				savePtr += captureGroupMatchCount;
