@@ -2,7 +2,11 @@ This is an example text file. If you would like to check the contents of this fi
 
 Hopefully this works because regex is very difficult. Here are some test values:
 
-192.168.1.1
+8f
+
+82
+
+190.168.1.1
 
 fe.ff.12.a6.c2.1b
 
