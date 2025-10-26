@@ -26,13 +26,16 @@ CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_has_flag(const RegexFla
 CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_non_escaped_char_type(const char toCheck) {
 	switch (toCheck) {
 		case '.':
-		case '$':
-		case '^':
 		case '[':
 		case ']':
 		case '(':
 		case ')':
 			return CREGEX_PATTERN_METACHARACTER;
+		case '$':
+		case 'Z':
+		case 'A':
+		case '^':
+			return CREGEX_PATTERN_METACHARACTER | CREGEX_PATTERN_NON_CONSUMING_CHARACTER;
 		case '{':
 		case '*':
 		case '+':
@@ -62,11 +65,14 @@ CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_capture_group_type(
 		case '*':
 		case '+':
 		case '?':
-		case '^':
-		case '$':
 		case '\\':
 		case '|':
 			return CREGEX_PATTERN_METACHARACTER;
+		case '$':
+		case 'Z':
+		case 'A':
+		case '^':
+			return CREGEX_PATTERN_METACHARACTER | CREGEX_PATTERN_NON_CONSUMING_CHARACTER;
 		default:
 			return 0;
 	}
@@ -79,6 +85,12 @@ CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_free_heap_stack(const HeapFr
 	}
 	free(stack.pointers);
 }
+
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_compile_end_anchor(RegexPattern *patternToAdd) {
+	internal_cregex_set_flag(&patternToAdd->flags, CREGEX_PATTERN_END_ANCHOR);
+	patternToAdd -> primaryChar = '$';
+}
+
 
 CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_compile_error(const char * const format, ...) {
 	va_list args;
@@ -415,31 +427,6 @@ CREGEX_IMPL_FUNC void internal_cregex_compile_capture_group(RegexPattern *patter
 	}
 }
 
-CREGEX_IMPL_FUNC void internal_cregex_compile_end_anchor(RegexPattern *patternToAdd) {
-	internal_cregex_set_flag(&patternToAdd->flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_END_ANCHOR);
-	patternToAdd -> primaryChar = '$';
-	patternToAdd -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	RegexPattern *cursor = patternToAdd -> child;
-	cursor -> minInstanceCount = 1;
-	cursor -> maxInstanceCount = 1;
-	cursor -> charClassLength = 2;
-	internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER_CLASS);
-	cursor -> child = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	cursor -> minInstanceCount = 1;
-	cursor = cursor -> child;
-	cursor -> minInstanceCount = 1;
-	cursor -> maxInstanceCount = 1;
-	cursor -> primaryChar = 'n';
-	internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER);
-	cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	cursor -> next -> prev = cursor;
-	cursor = cursor -> next;
-	internal_cregex_set_flag(&cursor -> flags, CREGEX_PATTERN_METACHARACTER);
-	cursor -> minInstanceCount = 1;
-	cursor -> maxInstanceCount = 1;
-	cursor -> primaryChar = 'Z';
-}
-
 CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char **str) {
 	RegexPattern ret = {0};
 	RegexFlag state = 0;
@@ -462,6 +449,9 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 		internal_cregex_set_flag(&charType, CREGEX_PATTERN_METACHARACTER);
 	} else if (internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER) && internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
 		internal_cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
+	}
+	if ((**str == 'B' || **str == 'b') && internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+		internal_cregex_set_flag(&charType, CREGEX_PATTERN_NON_CONSUMING_CHARACTER);
 	}
 	ret.flags = charType;
 	ret.charClassLength = 0;
@@ -616,7 +606,7 @@ CREGEX_IMPL_FUNC int internal_cregex_is_alphabetic(const char toMatch) {
 }
 
 CREGEX_IMPL_FUNC int internal_cregex_is_alphanumeric(const char toMatch) {
-	return internal_cregex_is_alphabetic(toMatch) || internal_cregex_is_numeric(toMatch) || toMatch == '-';
+	return internal_cregex_is_alphabetic(toMatch) || internal_cregex_is_numeric(toMatch) || toMatch == '_';
 }
 
 CREGEX_IMPL_FUNC int internal_cregex_is_whitespace(const char toMatch) {
@@ -645,15 +635,22 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
 			 return internal_cregex_is_alphanumeric(toMatch);
 		case 'W':
 			 return !internal_cregex_is_alphanumeric(toMatch);
+		case 'b':
+			return (*str == strStart && internal_cregex_is_alphanumeric(**str)) || (internal_cregex_is_alphanumeric(*(*str-1)) != internal_cregex_is_alphanumeric(toMatch)) || !*str;
+		case 'B':
+			return !((*str == strStart && internal_cregex_is_alphanumeric(**str)) || (internal_cregex_is_alphanumeric(*(*str-1)) != internal_cregex_is_alphanumeric(toMatch)) || !*str);
 		case 'n':
 			return toMatch == '\n';
 		case 't':
 			return toMatch == '\t';
 		case 'Z':
 			return toMatch == '\0';
+		case '$':
+			return toMatch == '\0' || **str == '\n';
 		case 'A':
-		case '^':
 			return *str == strStart;
+		case '^':
+			return *str == strStart || *(*str-1) == '\n';
 		case '.':
 			return toMatch != '\n';
 		case '-':
@@ -701,7 +698,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 			size_t currentMatch = 0;
 			RegexPattern *cursor = parent -> alternations[j];
 			while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-				currentMatch += currentToAdd;
+				if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentMatch += currentToAdd;
 				cursor = cursor -> next;
 			}
 			if (currentToAdd != CREGEX_MATCH_FAIL) {
@@ -714,7 +711,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 		}
 		result += longestIterationMatch;
 	}
-	if (i+1 < parent -> minInstanceCount) {
+	if (i < parent -> minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	if (result != CREGEX_MATCH_FAIL) {
@@ -732,7 +729,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	size_t i=0;
 	for (i=0; i<parent -> maxInstanceCount; i++) {
 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
-			result += currentToAdd;
+			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
 			cursor = cursor -> next;
 		}
 		cursor = parent -> child;
@@ -824,7 +821,9 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 	}
 	if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
 	for (;max >= min && max - 1 < max; max--) { // Default greedy loop
-		const char *postincrement = *str + max;
+		const char *postincrement;
+		if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) postincrement = *str;
+		else postincrement = *str + max;
 		if (internal_cregex_compare_char_length(compiledPattern, *str, max, strStart, str)) {
 			size_t lookThrough = 0;
 			if (compiledPattern -> next && internal_cregex_has_flag(&compiledPattern -> next -> flags, CREGEX_PATTERN_LOOKAHEAD)) {
@@ -833,10 +832,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 				lookThrough = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
-				*str += max;
-				if ((compiledPattern -> primaryChar == 'A'|| compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) {
-					(*str)--;
-				}
+				if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += max;
 				return max;
 			}
 		}
@@ -856,8 +852,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 				lookThrough = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
-				*str += min;
-				if ((compiledPattern -> primaryChar == 'A' || compiledPattern -> primaryChar == '^') && internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_METACHARACTER)) (*str)--;
+				if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += min;
 				return min;
 			}
 		}
