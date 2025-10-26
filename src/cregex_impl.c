@@ -1095,3 +1095,7 @@ CREGEX_EXPORT void cregex_destroy_match_container(RegexMatchContainer container)
 	}
 	free(container.matches);
 }
+
+CREGEX_EXPORT void cregex_destroy_match_container_py(RegexMatchContainer container) {
+	free(container.matches);
+}

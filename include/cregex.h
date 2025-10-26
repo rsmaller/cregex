@@ -79,8 +79,9 @@ CREGEX_EXPORT void cregex_print_match            (RegexMatch match);
 CREGEX_EXPORT void cregex_print_match_with_groups(RegexMatch match);
 CREGEX_EXPORT void cregex_print_match_container  (RegexMatchContainer container, RegexFlag flags);
 
-CREGEX_EXPORT void cregex_destroy_pattern        (RegexPattern *head);
-CREGEX_EXPORT void cregex_destroy_match          (RegexMatch container);
-CREGEX_EXPORT void cregex_destroy_match_container(RegexMatchContainer container);
+CREGEX_EXPORT void cregex_destroy_pattern           (RegexPattern *head);
+CREGEX_EXPORT void cregex_destroy_match             (RegexMatch container);
+CREGEX_EXPORT void cregex_destroy_match_container   (RegexMatchContainer container);
+CREGEX_EXPORT void cregex_destroy_match_container_py(RegexMatchContainer container);
 
 #endif // CREGEX_H
