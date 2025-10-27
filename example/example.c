@@ -32,11 +32,11 @@ int main(const int argc, const char **argv) {
     cregex_print_match_with_groups(firstMatch);
     printf("Longest Match: ");
     cregex_print_match_with_groups(longestMatch);
+    cregex_destroy_match_heap(firstMatch);
+    cregex_destroy_match_heap(longestMatch);
 #endif
     printf("Time used: %lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cregex_destroy_pattern(pattern);
-    cregex_destroy_match_heap(firstMatch);
-    cregex_destroy_match_heap(longestMatch);
     free(fileText);
     printf("Ending; returning 0\n");
     return 0;
