@@ -16,6 +16,15 @@ cmake -DLINK=static .
 cmake --build .
 ```
 
+This library can be built into a CPack package, which can then be installed on many different systems.
+To install on Arch machines with PKGBUILD, use the "TGZ" CPack generator.
+
+There are install scripts included for various operating systems in the `install/` directory. There are MinGW and MSVC 
+installers for Windows, a generic installer for UNIX machines, and a macOS-specific installer.
+
+The non-Windows install scripts install the library in the `/usr/local/lib` and `/usr/local/include` directories.
+When using the macOS installer, client code should specify `@rpath` as `/usr/local/lib`.
+
 ## Usage
 ### Library Initialization
 After setting up your linking environment, client code only needs to include the `cregex.h` header.
