@@ -76,7 +76,7 @@ PrintFlags = _internal_print_flags(
 def to_c_string(string):
     return c_char_p(string.encode("utf-8"))
 
-libcregex = cdll.LoadLibrary("./libcregex" + extension)
+libcregex = cdll.LoadLibrary("libcregex" + extension)
 
 _internal_cregex_compile_pattern = libcregex.cregex_compile_pattern
 _internal_cregex_compile_pattern.argtypes = [c_char_p]
