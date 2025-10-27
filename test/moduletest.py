@@ -3,7 +3,7 @@ import sys
 sys.path.append("/usr/local/lib/cregex")
 import cregex
 
-myPattern = cregex.compile_pattern("(\\d{2})")
+myPattern = cregex.Pattern("(\\d{2})")
 myPattern.print_pattern()
 
 myMatch = myPattern.multi_match("zbc 11 zzzzzz", 0)
