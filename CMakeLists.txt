@@ -53,6 +53,7 @@ target_include_directories(cregex PRIVATE ./include)
 target_link_libraries(exampleregex cregex)
 
 # CMake Package Generator
+set(CMAKE_INSTALL_PREFIX "/usr/local/")
 install(TARGETS cregex
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -61,6 +62,7 @@ install(TARGETS cregex
 install(DIRECTORY include/
         DESTINATION include/cregex/
 )
+
 set(CPACK_PACKAGE_MAINTAINER "Ryan Smaller")
 set(CPACK_PACKAGE_NAME "libcregex")
 set(CPACK_PACKAGE_VERSION ${CREGEX_PROJECT_VERSION}-${CREGEX_PROJECT_REVISION})

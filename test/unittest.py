@@ -43,7 +43,7 @@ def fetch_executable():
 	# os.system("cmake .. -DCMAKE_BUILD_TYPE=Debug -DEXAMPLE_TYPE=Single -DSANITIZE=Address")
 	os.system("cmake .. -DCMAKE_BUILD_TYPE=Release -DEXAMPLE_TYPE=Single")
 	os.system("cmake --build .")
-	potentials = sorted(pathlib.Path('.').glob("**/exampleregex*"))
+	potentials = sorted(pathlib.Path('').glob("**/exampleregex*"))
 	to_use = ""
 	for item in potentials:
 		if os.path.basename(item) == "exampleregex" or os.path.basename(item) == "exampleregex.exe":

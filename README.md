@@ -26,6 +26,22 @@ The non-Windows install scripts install the library in the `/usr/local/lib` and 
 When using the macOS installer, client code should specify `@rpath` as `/usr/local/lib`.
 
 ## Usage
+
+### Python Module
+There is a Python FFI wrapper included in this library. It is located in the `pyModule` directory.
+The install script for this is `generic-python-install.py` in the `install` directory.
+It will install the module in `/usr/local/lib` on UNIX systems.
+
+To use this module, append the relevant folder to your module path: 
+```
+sys.path.append("/usr/local/lib")
+```
+Then the module can be imported:
+```
+import cregex
+```
+
+
 ### Library Initialization
 After setting up your linking environment, client code only needs to include the `cregex.h` header.
 This library does not use a context and does not have any `init()` adjacent functions.
