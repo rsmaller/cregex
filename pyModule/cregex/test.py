@@ -3,10 +3,9 @@ import cregex
 myPattern = cregex.compile_pattern("(\\d{2})")
 myPattern.print_pattern()
 
-myMatch = myPattern.first_match("abc 11 aaaaaa")
-myMatch.print_match()
-myMatch.group_index(0).print_match()
+myMatch = myPattern.multi_match("zbc 11 zzzzzz", 0)
+print(myMatch.matches[0].groups[0])
 
-myMatch = myPattern.multi_match("abc 11 aaaaaa", 0)
-myMatch.match_index(0).print_match()
+myMatch = myPattern.first_match("woah 22 woah woah woah")
+print(myMatch)
 

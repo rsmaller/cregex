@@ -128,19 +128,18 @@ CREGEX_IMPL_FUNC_H int internal_cregex_is_alphabetic  (char toMatch);
 CREGEX_IMPL_FUNC_H int internal_cregex_is_alphanumeric(char toMatch);
 CREGEX_IMPL_FUNC_H int internal_cregex_is_whitespace  (char toMatch);
 
-CREGEX_IMPL_FUNC_H int internal_cregex_compare_single_char(const RegexPattern *patternChar, char toMatch, const char *strStart, const char **str);
-CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, size_t count, const char *strStart, const char **str);
-CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_class (const RegexPattern *classContainer, char toMatch, const char *strStart, const char **str);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_single_char(const RegexPattern *patternChar, char toMatch, const char *strStart, char **str);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, size_t count, const char *strStart, char **str);
+CREGEX_IMPL_FUNC_H int internal_cregex_compare_char_class (const RegexPattern *classContainer, char toMatch, const char *strStart, char **str);
 
-CREGEX_IMPL_FUNC_H size_t internal_cregex_match_alternation  (const RegexPattern *parent, const char *strStart, const char **str);
-CREGEX_IMPL_FUNC_H size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char *strStart, const char **str);
-CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookahead    (const RegexPattern *compiledPattern, const char *strStart, const char *str);
-CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, const char *str);
-CREGEX_IMPL_FUNC_H size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, const char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_alternation  (const RegexPattern *parent, const char *strStart, char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_capture_group(const RegexPattern *parent, const char *strStart, char **str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookahead    (const RegexPattern *compiledPattern, const char *strStart, char *str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, char *str);
+CREGEX_IMPL_FUNC_H size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, char **str);
 
-CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char *strStart, const char *str);
-CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, const char *str);
-
+CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char *strStart, char *str);
+CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, char *str);
 
 CREGEX_IMPL_FUNC_H void internal_cregex_free_heap_stack(HeapFreeStack stack);
 
