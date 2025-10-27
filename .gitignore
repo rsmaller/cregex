@@ -56,10 +56,18 @@ dkms.conf
 *.dwo
 
 # Other build files
+cpack-pkg
+*regex*.sh
+*libcregex*
 *.vcxproj
 *.vcxproj.filters
 *.sln
 *.dir
+*.zst
+*.bz2
+*.xz
+*.gz
+*.tar*
 *ninja*
 /cmake_install.cmake
 /cmake-build*
@@ -83,3 +91,7 @@ install_manifest.txt
 # Python Environment and Build Files
 .venv
 /pyUnitTestBuild
+__pycache__
+.BUILDINFO
+.MTREE
+.PKGINFO

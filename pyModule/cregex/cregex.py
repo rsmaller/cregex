@@ -1,5 +1,15 @@
 from ctypes import *
 from collections import namedtuple
+from sys import platform
+
+if platform == "linux" or platform == "linux2":
+    extension = ".so"
+elif platform == "win32":
+    extension = ".dll"
+elif platform == "darwin":
+    extension = ".dylib"
+else:
+    extension = ""
 
 class RegexMatch(Structure):
     def __str__(self):
@@ -66,7 +76,7 @@ PrintFlags = _internal_print_flags(
 def to_c_string(string):
     return c_char_p(string.encode("utf-8"))
 
-libcregex = cdll.LoadLibrary("./libcregex")
+libcregex = cdll.LoadLibrary("./libcregex" + extension)
 
 _internal_cregex_compile_pattern = libcregex.cregex_compile_pattern
 _internal_cregex_compile_pattern.argtypes = [c_char_p]

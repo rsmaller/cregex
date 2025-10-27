@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import cregex
 
 myPattern = cregex.compile_pattern("(\\d{2})")
