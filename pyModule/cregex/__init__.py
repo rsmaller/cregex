@@ -3,13 +3,13 @@ from collections import namedtuple
 from sys import platform
 
 if platform == "linux" or platform == "linux2":
-    prefix = ""
+    prefix = "lib"
     extension = ".so"
 elif platform == "win32":
-    prefix = ""
+    prefix = "C:\\Program Files\\libcregex\\"
     extension = ".dll"
 elif platform == "darwin":
-    prefix = "/usr/local/lib/"
+    prefix = "/usr/local/lib/lib"
     extension = ".dylib"
 else:
     prefix = ""
@@ -91,7 +91,7 @@ PrintFlags = _internal_print_flags(
 def to_c_string(string):
     return c_char_p(string.encode("utf-8"))
 
-libcregex = cdll.LoadLibrary(prefix + "libcregex" + extension)
+libcregex = cdll.LoadLibrary(prefix + "cregex" + extension)
 
 _internal_cregex_compile_pattern = libcregex.cregex_compile_pattern
 _internal_cregex_compile_pattern.argtypes = [c_char_p]

@@ -1047,7 +1047,7 @@ CREGEX_EXPORT RegexMatch cregex_heap_copy_match(RegexMatch container) { // NOLIN
 	if (!container.match || container.matchLength == CREGEX_MATCH_FAIL) return ret;
 	ret.matchLength = container.matchLength;
 	char *allocation = (char *)malloc(ret.matchLength * sizeof(char) + 1);
-	strncpy(allocation, container.match, ret.matchLength);
+	memcpy(allocation, container.match, ret.matchLength * sizeof(char));
 	allocation[ret.matchLength] = '\0';
 	ret.match = allocation; // avoid qualifier loss
 	ret.groupCount = container.groupCount;

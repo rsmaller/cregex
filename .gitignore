@@ -75,7 +75,7 @@ cpack-pkg
 /CMakeFiles
 /x64
 /Debug
-/build
+build
 /Testing
 /.cmake
 /.idea
@@ -95,3 +95,4 @@ __pycache__
 .BUILDINFO
 .MTREE
 .PKGINFO
+*.egg-info
