@@ -56,6 +56,8 @@
 #define CREGEX_PATTERN_END_ANCHOR                    CREGEX_FLAG_BIT(12)
 #define CREGEX_PATTERN_NON_CONSUMING_CHARACTER       CREGEX_FLAG_BIT(13)
 
+#define CREGEX_PATTERN_ERROR                         CREGEX_FLAG_BIT(sizeof(uint64_t) * 8 - 1)
+
 #define CREGEX_MATCH_FAIL SIZE_MAX
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -94,8 +96,8 @@ typedef struct HeapFreeStack {
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_IMPL_FUNC_H void internal_cregex_compile_error(const char *format, ...);
-CREGEX_IMPL_FUNC_H void internal_cregex_output       (const char *format, ...);
+CREGEX_IMPL_FUNC_H void internal_cregex_error (const char *format, ...);
+CREGEX_IMPL_FUNC_H void internal_cregex_output(const char *format, ...);
 
 CREGEX_IMPL_FUNC_H void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
 CREGEX_IMPL_FUNC_H void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
@@ -106,13 +108,13 @@ CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_non_escaped_char_type(char toCh
 CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_char_class_char_type (char toCheck);
 CREGEX_IMPL_FUNC_H RegexFlag internal_cregex_get_capture_group_type   (char toCheck);
 
-CREGEX_IMPL_FUNC_H void internal_cregex_set_char_count(RegexPattern *toSet, const char **str);
+CREGEX_IMPL_FUNC_H uint64_t internal_cregex_set_char_count(RegexPattern *toSet, const char **str);
 
-CREGEX_IMPL_FUNC_H void         internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNC_H void         internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNC_H void         internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
-CREGEX_IMPL_FUNC_H void         internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *left);
-CREGEX_IMPL_FUNC_H void         internal_cregex_adjust_alternation_group(RegexPattern *parent);
+CREGEX_IMPL_FUNC_H uint64_t     internal_cregex_compile_char_class      (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H uint64_t     internal_cregex_compile_lookahead       (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H uint64_t     internal_cregex_compile_capture_group   (RegexPattern *patternToAdd, const char **pattern);
+CREGEX_IMPL_FUNC_H uint64_t     internal_cregex_compile_alternation     (RegexPattern *parent, RegexPattern *left);
+CREGEX_IMPL_FUNC_H uint64_t     internal_cregex_adjust_alternation_group(RegexPattern *parent);
 CREGEX_IMPL_FUNC_H void         internal_cregex_compile_end_anchor      (RegexPattern *patternToAdd);
 CREGEX_IMPL_FUNC_H RegexPattern internal_cregex_fetch_current_char_incr (const char **str);
 

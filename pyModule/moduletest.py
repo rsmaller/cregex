@@ -12,3 +12,5 @@ print(myMatch.matches[0].groups[0])
 myMatch = myPattern.first_match("woah 22 woah woah woah")
 print(myMatch)
 
+badPattern = myPattern = cregex.Pattern("(\\d{2}")
+

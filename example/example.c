@@ -17,6 +17,10 @@ int main(const int argc, const char **argv) {
     printf("\nMatching from file %s\n", argv[1]);
     printf("Pattern is \"%s\"\n", patternStr);
     RegexPattern *pattern = cregex_compile_pattern(patternStr);
+    if (!pattern) {
+        printf("Pattern failed to compile\n");
+        exit(0);
+    }
     cregex_print_compiled_pattern(pattern);
     clock_t start = clock();
 #ifdef CREGEX_EXAMPLE_MULTI_MATCH

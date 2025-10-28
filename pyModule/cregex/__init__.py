@@ -32,10 +32,16 @@ class Match:
 class _RegexPattern(Structure):
     pass
 
+class CompileError(TypeError):
+    def __init__(self, msg):
+        super().__init__(msg)
+
 class Pattern:
     def __init__(self, pattern):
         if isinstance(pattern, str):
             self._pattern = _internal_cregex_compile_pattern(_to_c_string(pattern))
+            if not self._pattern:
+                raise CompileError(f"Pattern \"{pattern}\" could not be compiled")
         elif isinstance(pattern, _RegexPattern):
             self._pattern = pattern
         else:
