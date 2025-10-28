@@ -35,26 +35,26 @@ class _RegexPattern(Structure):
 class Pattern:
     def __init__(self, pattern):
         if isinstance(pattern, str):
-            self.pattern = _internal_cregex_compile_pattern(_to_c_string(pattern))
+            self._pattern = _internal_cregex_compile_pattern(_to_c_string(pattern))
         elif isinstance(pattern, _RegexPattern):
-            self.pattern = pattern
+            self._pattern = pattern
         else:
             raise TypeError("Pattern must be a string or pattern tree type")
 
     def __del__(self):
-        _internal_cregex_destroy_pattern(self.pattern)
+        _internal_cregex_destroy_pattern(self._pattern)
 
     def first_match(self, string):
-        return Match(_internal_cregex_first_match(self.pattern, _to_c_string(string)))
+        return Match(_internal_cregex_first_match(self._pattern, _to_c_string(string)))
 
     def longest_match(self, string):
-        return Match(_internal_cregex_longest_match(self.pattern, _to_c_string(string)))
+        return Match(_internal_cregex_longest_match(self._pattern, _to_c_string(string)))
 
     def multi_match(self, string, flags):
-        return MatchContainer(_internal_cregex_multi_match(self.pattern, _to_c_string(string), _RegexFlag(flags)))
+        return MatchContainer(_internal_cregex_multi_match(self._pattern, _to_c_string(string), _RegexFlag(flags)))
 
     def print_pattern(self):
-        _internal_cregex_print_compiled_pattern(self.pattern)
+        _internal_cregex_print_compiled_pattern(self._pattern)
 
 class _RegexMatchContainer(Structure):
     pass
@@ -63,6 +63,9 @@ class MatchContainer:
     def __init__(self, container):
         self.matches = [Match(container.matches[i]) for i in range(container.matchCount)]
         _internal_cregex_destroy_match_container(container)
+
+    def primary_matches(self):
+        return [str(match) for match in self.matches]
 
 _RegexMatch._fields_ = [
     ("matchLength", c_size_t),
