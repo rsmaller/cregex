@@ -1,6 +1,6 @@
 # cregex
-A lightweight regex engine library written in C.
-This library is designed to be provide basic and cross-platform ASCII regular expression matching.
+A super-minimal and lightweight regex engine library written in C.
+This library is designed to provide basic and cross-platform ASCII regular expression matching.
 
 ## Installation
 This library is designed to be built with CMake. 
@@ -27,21 +27,6 @@ When using the macOS installer, client code should specify `@rpath` as `/usr/loc
 
 ## Usage
 
-### Python Module
-There is a Python FFI wrapper included in this library. It is located in the `pyModule` directory.
-The install script for this is `generic-python-install.py` in the `install` directory.
-It will install the module in `/usr/local/lib` on UNIX systems.
-
-To use this module, append the relevant folder to your module path: 
-```
-sys.path.append("/usr/local/lib")
-```
-Then the module can be imported:
-```
-import cregex
-```
-
-
 ### Library Initialization
 After setting up your linking environment, client code only needs to include the `cregex.h` header.
 This library does not use a context and does not have any `init()` adjacent functions.
@@ -52,13 +37,16 @@ This library does not use a context and does not have any `init()` adjacent func
 `RegexPattern` is a node struct in a regular expression matching tree, typically represented in code with the type `RegexPattern *`.
 
 `RegexMatch` is a struct containing a single match from a regular expression. 
-The match will contain:`matchLength`, the length of the main match, `match`, 
-the slice of the original string where the match starts (keep in mind that this is a slice and not a copy), 
-`groupCount`, the number of match group matches,
-and `groups`, an array of pointers to each group match.
+The match will contain:
+- `matchLength`, the length of the main match.
+- `match`, the slice of the original string where the match starts (keep in mind that this is a slice and not a copy).
+- `groupCount`, the number of match group matches.
+- `groups`, an array of pointers to each group match.
 
 `RegexMatchContainer` is a struct containing multipel matches from a regular expression.
-This struct has an array of `RegexMatch` elements called `matches` and a size called `matchCount`.
+This struct has:
+- `matches`, an array of `RegexMatch` elements.
+- `matchCount`, the length of the `matches` array.
 
 ### Functions
 
@@ -117,3 +105,40 @@ you would like to have a modifiable match string to do something else with, this
 #### Cleanup
 `cregex_destroy_pattern()`, `cregex_destroy_match()`, and `cregex_destroy_match_container()` will clean up resources used by 
 patterns and matches respectively and prevent memory leaks.
+
+### Python Module
+There is a Python FFI wrapper included in this library. It is located in the `pyModule` directory.
+To install this module, run the following command in the `pyModule` directory:
+```
+pip install .
+```
+Then the module can be imported:
+```
+import cregex
+```
+
+#### Python Data Types
+
+`Pattern` is a wrapper class for a `RegexPattern`. A pattern can be constructed with a pattern string, for example:
+```
+examplePattern = cregex.Pattern("\d{2}")
+```
+It has the following methods:
+- `first_match`, the counterpart to `cregex_first_match`, which accepts a search string and returns a `Match`.
+- `longest_match`, the counterpart to `cregex_longest_match`, which accepts a search string and returns a `Match`.
+- `multi_match`, the counterpart to `cregex_multi_match`, which accepts a search string and returns a `MatchContainer`.
+- `print_pattern`, the counterpart to `cregex_print_compiled_pattern`, which neither accepts or returns anything.
+
+
+`Match` is a wrapper class for `RegexMatch`. It contains the following attributes:
+- `match`, a string representing the main match.
+- `groups`, a list of strings representing each match group.
+
+`MatchContainer` is a wrapper class for `RegexMatchContainer`. It contains one attribute:
+- `matches`, a list of `Match` items representing each match 
+
+## Limitations
+This library is a minimal implementation of regular expression matching that does not fully conform to any currently used
+standards. As such, certain edge cases like multiple instances of a match group concatenate into an entire match group instead of saving the last matching instance of the match group.
+
+Other features which may be implemented in denser regular expression implementations, like variadic length lookbehinds, alternations in lookbehinds, recursion, and nested matching groups are not supported.
