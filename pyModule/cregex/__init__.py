@@ -35,7 +35,7 @@ class _RegexPattern(Structure):
 class Pattern:
     def __init__(self, pattern):
         if isinstance(pattern, str):
-            self.pattern = _internal_cregex_compile_pattern(to_c_string(pattern))
+            self.pattern = _internal_cregex_compile_pattern(_to_c_string(pattern))
         elif isinstance(pattern, _RegexPattern):
             self.pattern = pattern
         else:
@@ -45,13 +45,13 @@ class Pattern:
         _internal_cregex_destroy_pattern(self.pattern)
 
     def first_match(self, string):
-        return Match(_internal_cregex_first_match(self.pattern, to_c_string(string)))
+        return Match(_internal_cregex_first_match(self.pattern, _to_c_string(string)))
 
     def longest_match(self, string):
-        return Match(_internal_cregex_longest_match(self.pattern, to_c_string(string)))
+        return Match(_internal_cregex_longest_match(self.pattern, _to_c_string(string)))
 
     def multi_match(self, string, flags):
-        return MatchContainer(_internal_cregex_multi_match(self.pattern, to_c_string(string), _RegexFlag(flags)))
+        return MatchContainer(_internal_cregex_multi_match(self.pattern, _to_c_string(string), _RegexFlag(flags)))
 
     def print_pattern(self):
         _internal_cregex_print_compiled_pattern(self.pattern)
@@ -88,39 +88,39 @@ PrintFlags = _internal_print_flags(
     ZERO_LENGTH_MATCHES=(0<<1)
 )
 
-def to_c_string(string):
+def _to_c_string(string):
     return c_char_p(string.encode("utf-8"))
 
-libcregex = cdll.LoadLibrary(prefix + "cregex" + extension)
+_libcregex = cdll.LoadLibrary(prefix + "cregex" + extension)
 
-_internal_cregex_compile_pattern = libcregex.cregex_compile_pattern
+_internal_cregex_compile_pattern = _libcregex.cregex_compile_pattern
 _internal_cregex_compile_pattern.argtypes = [c_char_p]
 _internal_cregex_compile_pattern.restype = POINTER(_RegexPattern)
 
-_internal_cregex_first_match = libcregex.cregex_first_match_heap
+_internal_cregex_first_match = _libcregex.cregex_first_match_heap
 _internal_cregex_first_match.argtypes = [POINTER(_RegexPattern), c_char_p]
 _internal_cregex_first_match.restype = _RegexMatch
 
-_internal_cregex_longest_match = libcregex.cregex_longest_match_heap
+_internal_cregex_longest_match = _libcregex.cregex_longest_match_heap
 _internal_cregex_longest_match.argtypes = [POINTER(_RegexPattern), c_char_p]
 _internal_cregex_longest_match.restype = _RegexMatch
 
-_internal_cregex_multi_match = libcregex.cregex_multi_match_heap
+_internal_cregex_multi_match = _libcregex.cregex_multi_match_heap
 _internal_cregex_multi_match.argtypes = [POINTER(_RegexPattern), c_char_p, _RegexFlag]
 _internal_cregex_multi_match.restype = _RegexMatchContainer
 
-_internal_cregex_print_compiled_pattern = libcregex.cregex_print_compiled_pattern
+_internal_cregex_print_compiled_pattern = _libcregex.cregex_print_compiled_pattern
 _internal_cregex_print_compiled_pattern.argtypes = [POINTER(_RegexPattern)]
 _internal_cregex_print_compiled_pattern.restype = None
 
-_internal_cregex_destroy_pattern = libcregex.cregex_destroy_pattern
+_internal_cregex_destroy_pattern = _libcregex.cregex_destroy_pattern
 _internal_cregex_destroy_pattern.argtypes = [POINTER(_RegexPattern)]
 _internal_cregex_destroy_pattern.restype = None
 
-_internal_cregex_destroy_match = libcregex.cregex_destroy_match_heap
+_internal_cregex_destroy_match = _libcregex.cregex_destroy_match_heap
 _internal_cregex_destroy_match.argtypes = [_RegexMatch]
 _internal_cregex_destroy_match.restype = None
 
-_internal_cregex_destroy_match_container = libcregex.cregex_skim_match_container
+_internal_cregex_destroy_match_container = _libcregex.cregex_skim_match_container
 _internal_cregex_destroy_match_container.argtypes = [_RegexMatchContainer]
 _internal_cregex_destroy_match_container.restype = None

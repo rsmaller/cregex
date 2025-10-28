@@ -77,7 +77,7 @@ first one encountered.
 `cregex_multi_match()`:
 This function takes the same parameters as the other two matching functions as well as a flag parameter.
 By default, it will return all non-overlapping matches in a `RegexMatchContainer`. For example, the pattern "\d{3}" with
-the string "123456" would return the matches `123` and `456`. To allow overlapping matches, 
+the string `"123456"` would return the matches `123` and `456`. To allow overlapping matches, 
 specify the `CREGEX_PERMUTED_MATCHES` flag.
 
 #### Output
@@ -128,7 +128,6 @@ It has the following methods:
 - `longest_match`, the counterpart to `cregex_longest_match`, which accepts a search string and returns a `Match`.
 - `multi_match`, the counterpart to `cregex_multi_match`, which accepts a search string and returns a `MatchContainer`.
 - `print_pattern`, the counterpart to `cregex_print_compiled_pattern`, which neither accepts or returns anything.
-
 
 `Match` is a wrapper class for `RegexMatch`. It contains the following attributes:
 - `match`, a string representing the main match.
