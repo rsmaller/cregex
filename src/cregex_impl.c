@@ -817,7 +817,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	size_t currentToAdd = CREGEX_MATCH_FAIL;
 	size_t i=0;
 	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
-	for (i=0; i<parent -> maxInstanceCount; i++) {
+	for (i=0; i<parent -> maxInstanceCount; i++) { // This doesn't work correctly yet
 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
 			cursor = cursor -> next;
