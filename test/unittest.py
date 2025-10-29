@@ -5,7 +5,13 @@ script_dir = os.getcwd()
 folder_name = "pyUnitTestBuild"
 filepath = "unit_test_output.txt"
 testCases = [
-	r"?",
+	r"(\w)+?",
+	r"(\w)+",
+	r"(\w|)+?",
+	r"(\w|)+",
+    r"\b[\w\-.]+\w@[\w\-.]+\w\b",
+	r"\b[\w\-.]+@[\w\-.]+\b",
+    r"?",
 	r"a{a}",
 	r"a{12,",
 	r"(?<=a{1,2})a",

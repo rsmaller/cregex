@@ -807,6 +807,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	char *strCopy = *str;
 	size_t currentToAdd = CREGEX_MATCH_FAIL;
 	size_t i=0;
+	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
 	for (i=0; i<parent -> maxInstanceCount; i++) {
 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
@@ -820,6 +821,22 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	if (i < parent -> minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
+	goto end;
+	lazyLoop:
+	for (i=0; i<parent -> maxInstanceCount && i < strlen(strStart) + 1; i++) { // May need to change this later.
+		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
+			cursor = cursor -> next;
+		}
+		cursor = parent -> child;
+		if (currentToAdd != CREGEX_MATCH_FAIL) {
+			break;
+		}
+	}
+	if (currentToAdd == CREGEX_MATCH_FAIL) {
+		result = CREGEX_MATCH_FAIL;
+	}
+	end:
 	if (result != CREGEX_MATCH_FAIL) {
 		*str += result;
 	}

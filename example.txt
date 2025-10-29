@@ -6,6 +6,12 @@ regexpression
 regexpr
 Hopefully this works because regex is very difficult. Here are some test values:
 
+jane.doe.@gmail.com.
+
+john@users.cs.umb.edu
+
+john.doe@gmail.com
+
 8f
 
 82
