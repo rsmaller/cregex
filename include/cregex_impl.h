@@ -96,7 +96,7 @@ typedef struct HeapFreeStack {
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CREGEX_IMPL_FUNC_H void internal_cregex_error (const char *format, ...);
+// CREGEX_IMPL_FUNC_H void internal_cregex_error (const char *format, ...);
 CREGEX_IMPL_FUNC_H void internal_cregex_output(const char *format, ...);
 
 CREGEX_IMPL_FUNC_H void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);

@@ -18,6 +18,7 @@ int main(const int argc, const char **argv) {
     printf("Pattern is \"%s\"\n", patternStr);
     RegexPattern *pattern = cregex_compile_pattern(patternStr);
     if (!pattern) {
+	free(fileText);
         printf("Pattern failed to compile\n");
         exit(0);
     }

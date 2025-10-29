@@ -551,7 +551,11 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 
 RegexPattern *cregex_compile_pattern(const char *pattern) {
 	RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	if (!pattern || !*pattern || !ret) return NULL;
+	if (!ret) return NULL;
+	if (!pattern || !*pattern) {
+		free(ret);
+		return NULL;
+	}
 	RegexPattern *cursor = ret;
 	*ret = internal_cregex_fetch_current_char_incr(&pattern);
 	if (internal_cregex_has_flag(&ret -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_ERROR)) {
@@ -560,12 +564,18 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
 	}
 	while (*pattern) {
 		cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+		if (!cursor->next) {
+			cregex_destroy_pattern(ret);
+			return NULL;
+		}
 		*cursor -> next = internal_cregex_fetch_current_char_incr(&pattern);
-		if (!cursor->next || internal_cregex_has_flag(&cursor -> next -> flags, CREGEX_PATTERN_ERROR)) {
+		if (internal_cregex_has_flag(&cursor -> next -> flags, CREGEX_PATTERN_ERROR)) {
+			free(cursor -> next);
 			cursor -> next = NULL;
 			cregex_destroy_pattern(ret);
 			return NULL;
 		}
+		
 		cursor -> next -> prev = cursor;
 		cursor = cursor -> next;
 	}
