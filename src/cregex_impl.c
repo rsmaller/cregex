@@ -78,7 +78,7 @@ CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_capture_group_type(
 	}
 }
 
-CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_free_heap_stack(const HeapFreeStack stack) {
+CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_free_heap_stack(const RegexHeapContainer stack) {
 	if (!stack.pointers) return;
 	for (size_t i=0; i<stack.count; i++) {
 		if (stack.pointers[i]) free(stack.pointers[i]);
@@ -91,21 +91,20 @@ CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_compile_end_anchor(RegexPatt
 	patternToAdd -> primaryChar = '$';
 }
 
-
-// CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_error(const char * const format, ...) {
-// 	va_list args;
-// 	va_start(args, format);
-// 	char *msgStart = "CRegex Compile Error: ";
-// 	char *msgEnd = "\n";
-// 	char *errorBuf = (char *)calloc(strlen(msgStart) + strlen(format) + strlen(msgEnd) + 1, sizeof(char));
-// 	memcpy(errorBuf, msgStart, strlen(msgStart) + 1);
-// 	memcpy(errorBuf + strlen(errorBuf), format, strlen(format) + 1);
-// 	memcpy(errorBuf + strlen(errorBuf), msgEnd, strlen(msgEnd) + 1); // To shut up the compiler
-// 	vfprintf(stderr, errorBuf, args);
-// 	free(errorBuf);
-// 	va_end(args);
-// 	exit(CREGEX_COMPILE_FAILURE);
-// }
+CREGEX_IMPL_FUNC CREGEX_NORETURN CREGEX_UNUSED void internal_cregex_error(const char * const format, ...) { // For future use
+	va_list args;
+	va_start(args, format);
+	char *msgStart = "CRegex Compile Error: ";
+	char *msgEnd = "\n";
+	char *errorBuf = (char *)calloc(strlen(msgStart) + strlen(format) + strlen(msgEnd) + 1, sizeof(char));
+	memcpy(errorBuf, msgStart, strlen(msgStart) + 1);
+	memcpy(errorBuf + strlen(errorBuf), format, strlen(format) + 1);
+	memcpy(errorBuf + strlen(errorBuf), msgEnd, strlen(msgEnd) + 1); // To shut up the compiler
+	vfprintf(stderr, errorBuf, args);
+	free(errorBuf);
+	va_end(args);
+	exit(CREGEX_COMPILE_FAILURE);
+}
 
 CREGEX_IMPL_FUNC void internal_cregex_output(const char * const format, ...) {
 	va_list args;
@@ -357,7 +356,7 @@ CREGEX_IMPL_FUNC uint64_t internal_cregex_adjust_alternation_group(RegexPattern 
 	if (!allocation) {
 		return CREGEX_PATTERN_ERROR;
 	}
-	HeapFreeStack orSymbolsToFree = {allocation, 0};
+	RegexHeapContainer orSymbolsToFree = {(void **)allocation, 0};
 	if (!parent || !parent -> alternations) {
 		internal_cregex_free_heap_stack(orSymbolsToFree);
 		return CREGEX_PATTERN_ERROR;
@@ -383,7 +382,7 @@ CREGEX_IMPL_FUNC uint64_t internal_cregex_adjust_alternation_group(RegexPattern 
 					internal_cregex_free_heap_stack(orSymbolsToFree);
 					return CREGEX_PATTERN_ERROR;
 				}
-				orSymbolsToFree.pointers = toFreeReallocation;
+				orSymbolsToFree.pointers = (void **)toFreeReallocation;
 				orSymbolsToFree.pointers[orSymbolsToFree.count-1] = toFree;
 				cursor -> prev = NULL;
 			} else {
@@ -394,7 +393,7 @@ CREGEX_IMPL_FUNC uint64_t internal_cregex_adjust_alternation_group(RegexPattern 
 					internal_cregex_free_heap_stack(orSymbolsToFree);
 					return CREGEX_PATTERN_ERROR;
 				}
-				orSymbolsToFree.pointers = toFreeReallocation;
+				orSymbolsToFree.pointers = (void **)toFreeReallocation;
 				orSymbolsToFree.pointers[orSymbolsToFree.count-1] = toFree;
 				break;
 			}
@@ -551,7 +550,11 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 
 RegexPattern *cregex_compile_pattern(const char *pattern) {
 	RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	if (!pattern || !*pattern || !ret) return NULL;
+	if (!ret) return NULL;
+	if (!pattern || !*pattern) {
+		free(ret);
+		return NULL;
+	}
 	RegexPattern *cursor = ret;
 	*ret = internal_cregex_fetch_current_char_incr(&pattern);
 	if (internal_cregex_has_flag(&ret -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_ERROR)) {
@@ -560,12 +563,18 @@ RegexPattern *cregex_compile_pattern(const char *pattern) {
 	}
 	while (*pattern) {
 		cursor -> next = (RegexPattern *)calloc(1, sizeof(RegexPattern));
+		if (!cursor->next) {
+			cregex_destroy_pattern(ret);
+			return NULL;
+		}
 		*cursor -> next = internal_cregex_fetch_current_char_incr(&pattern);
-		if (!cursor->next || internal_cregex_has_flag(&cursor -> next -> flags, CREGEX_PATTERN_ERROR)) {
+		if (internal_cregex_has_flag(&cursor -> next -> flags, CREGEX_PATTERN_ERROR)) {
+			free(cursor -> next);
 			cursor -> next = NULL;
 			cregex_destroy_pattern(ret);
 			return NULL;
 		}
+		
 		cursor -> next -> prev = cursor;
 		cursor = cursor -> next;
 	}
@@ -964,7 +973,7 @@ CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *comp
 		return returnVal;
 	}
 	const RegexPattern *cursor = compiledPattern;
-	returnVal.groups = malloc(sizeof(*returnVal.groups));
+	returnVal.groups = (RegexMatch *)malloc(sizeof(*returnVal.groups));
 	if (!returnVal.groups) {
 		returnVal.matchLength = CREGEX_MATCH_FAIL;
 		return returnVal;
@@ -1183,7 +1192,7 @@ CREGEX_EXPORT RegexMatchContainer cregex_heap_copy_match_container(RegexMatchCon
 CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max) {
 	FILE *internalFileHandle = fopen(path, "r");
 	if (!internalFileHandle) return NULL;
-	RegexFileString fileAllocation = {.buffer = calloc(4, sizeof(char)), .currentIndex = -1, .size = 4};
+	RegexFileString fileAllocation = {.buffer = (char *)calloc(4, sizeof(char)), .currentIndex = -1, .size = 4};
 	if (!fileAllocation.buffer) {
 		return NULL;
 	}
@@ -1198,7 +1207,7 @@ CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max) {
 				free(fileAllocation.buffer);
 				return NULL;
 			}
-			fileAllocation.buffer = reallocation;
+			fileAllocation.buffer = (char *)reallocation;
 		}
 	}
 	fclose(internalFileHandle);
@@ -1208,7 +1217,7 @@ CREGEX_EXPORT char *cregex_file_to_str(const char *path, int32_t max) {
 		free(fileAllocation.buffer);
 		return NULL;
 	}
-	*ret = reallocation;
+	*ret = (char *)reallocation;
 	return *ret;
 }
 

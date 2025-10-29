@@ -90,7 +90,7 @@ install_manifest.txt
 
 # Python Environment and Build Files
 .venv
-/pyUnitTestBuild
+pyUnitTestBuild
 __pycache__
 .BUILDINFO
 .MTREE

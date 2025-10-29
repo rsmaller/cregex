@@ -60,6 +60,10 @@ typedef struct RegexMatchContainer {
     #define CREGEX_IMPORT      extern
 #endif
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: User-Facing Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -93,5 +97,8 @@ CREGEX_EXPORT void cregex_skim_match_container   (RegexMatchContainer container)
 CREGEX_EXPORT void cregex_destroy_match_heap          (RegexMatch container);
 CREGEX_EXPORT void cregex_destroy_match_container_heap(RegexMatchContainer container);
 
+#ifdef __cplusplus
+    }
+#endif
 
 #endif // CREGEX_H
