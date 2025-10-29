@@ -12,20 +12,23 @@
 #define CREGEX_IMPL_H
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define CREGEX_IMPL_FUNC static __attribute__((used))
-    #define CREGEX_IMPL_FUNC_H static __attribute__((used))
-    #define CREGEX_NORETURN __attribute__((noreturn))
-    #define CREGEX_INLINE inline __attribute__((always_inline))
+    #define CREGEX_IMPL_FUNC    static __attribute__((used))
+    #define CREGEX_IMPL_FUNC_H  static __attribute__((used))
+    #define CREGEX_NORETURN     __attribute__((noreturn))
+    #define CREGEX_INLINE       inline __attribute__((always_inline))
+    #define CREGEX_UNUSED       __attribute__((unused))
 #elif defined(_MSC_VER)
-    #define CREGEX_IMPL_FUNC static
-    #define CREGEX_IMPL_FUNC_H static
-    #define CREGEX_NORETURN __declspec(noreturn)
-    #define CREGEX_INLINE inline
+    #define CREGEX_IMPL_FUNC    static
+    #define CREGEX_IMPL_FUNC_H  static
+    #define CREGEX_NORETURN     __declspec(noreturn)
+    #define CREGEX_INLINE       inline
+    #define CREGEX_UNUSED
 #else
-    #define CREGEX_IMPL_FUNC static
-    #define CREGEX_IMPL_FUNC_H static
+    #define CREGEX_IMPL_FUNC    static
+    #define CREGEX_IMPL_FUNC_H  static
     #define CREGEX_NORETURN
-    #define CREGEX_INLINE inline
+    #define CREGEX_INLINE       inline
+    #define CREGEX_UNUSED
 #endif
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -87,17 +90,17 @@ typedef struct RegexFileString {
 	size_t size;
 } RegexFileString;
 
-typedef struct HeapFreeStack {
+typedef struct RegexHeapContainer {
     void **pointers;
     size_t count;
-} HeapFreeStack;
+} RegexHeapContainer;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  SECTION: Internal Function Prototypes
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// CREGEX_IMPL_FUNC_H void internal_cregex_error (const char *format, ...);
-CREGEX_IMPL_FUNC_H void internal_cregex_output(const char *format, ...);
+CREGEX_IMPL_FUNC_H CREGEX_UNUSED void internal_cregex_error (const char *format, ...);
+CREGEX_IMPL_FUNC_H void               internal_cregex_output(const char *format, ...);
 
 CREGEX_IMPL_FUNC_H void      internal_cregex_set_flag   (RegexFlag *toCheck, RegexFlag flag);
 CREGEX_IMPL_FUNC_H void      internal_cregex_clear_flag (RegexFlag *toCheck, RegexFlag flag);
@@ -140,10 +143,10 @@ CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookahead    (const RegexPattern
 CREGEX_IMPL_FUNC_H size_t internal_cregex_match_lookbehind   (const RegexPattern *compiledPattern, const char *strStart, char *str);
 CREGEX_IMPL_FUNC_H size_t internal_cregex_match_pattern_char (const RegexPattern *compiledPattern, const char *strStart, char **str);
 
-CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char *strStart, char *str);
-CREGEX_IMPL_FUNC_H  RegexMatch internal_cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, char *str);
+CREGEX_IMPL_FUNC_H RegexMatch internal_cregex_first_match  (const RegexPattern *compiledPattern, const char *strStart, char *str);
+CREGEX_IMPL_FUNC_H RegexMatch internal_cregex_longest_match(const RegexPattern *compiledPattern, const char *strStart, char *str);
 
-CREGEX_IMPL_FUNC_H void internal_cregex_free_heap_stack(HeapFreeStack stack);
+CREGEX_IMPL_FUNC_H void internal_cregex_free_heap_stack(RegexHeapContainer stack);
 
 #undef CREGEX_IMPL_FUNC_H
 #undef CREGEX_IMPL
