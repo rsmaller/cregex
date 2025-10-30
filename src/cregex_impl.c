@@ -777,33 +777,38 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *clas
 CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, char **str) {// NOLINT
 	if (!parent) return CREGEX_MATCH_FAIL;
 	size_t result = 0;
-	size_t currentToAdd = CREGEX_MATCH_FAIL;
+	size_t currentToAdd = 0;
 	size_t i=0;
-	for (i=0; i<parent -> maxInstanceCount; i++) {
-		size_t longestIterationMatch = 0;
-		int alternationMatched = 0;
-		for (size_t j=0; j<parent -> alternationCount; j++) {
-			char *strCopy = *str + result;
-			size_t currentMatch = 0;
-			RegexPattern *cursor = parent -> alternations[j];
-			while (cursor && (currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) {
-				if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentMatch += currentToAdd;
+	char *strCopy = *str;
+	for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
+		int longestChanged = 0;
+		size_t longestAlternation = CREGEX_MATCH_FAIL;
+		for (size_t j=0; j < parent -> alternationCount; j++) {
+			RegexPattern* cursor = parent->alternations[j];
+			size_t currentAlternation = 0;
+			strCopy = *str + result;
+			while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+				if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentAlternation += currentToAdd;
 				cursor = cursor -> next;
 			}
-			if (currentToAdd != CREGEX_MATCH_FAIL) {
-				alternationMatched = 1;
-				if (currentMatch > longestIterationMatch) longestIterationMatch = currentMatch;
+			if ((longestAlternation == CREGEX_MATCH_FAIL && !cursor) || currentAlternation > longestAlternation) {
+				longestChanged = 1;
+				longestAlternation = currentAlternation;
 			}
 		}
-		if (!alternationMatched) {
+		if (internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) != CREGEX_MATCH_FAIL && i >= parent -> minInstanceCount) {
 			break;
 		}
-		result += longestIterationMatch;
+		if (longestChanged) {
+			result += longestAlternation;
+		} else {
+			break;
+		}
 	}
-	char *check = *str + result;
-	if (i < parent -> minInstanceCount && internal_cregex_match_pattern_char(parent -> next, strStart, &check) != CREGEX_MATCH_FAIL) {
+	if (i+1 < parent->minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
+	strCopy = *str + result;
 	if (result != CREGEX_MATCH_FAIL) {
 		*str += result;
 	}
@@ -818,7 +823,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	size_t currentToAdd = 0;
 	size_t i=0;
 	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
-	for (i=0; i<parent -> maxInstanceCount && currentToAdd != CREGEX_MATCH_FAIL; i++) { // This doesn't work correctly yet
+	for (i=0; i<parent -> maxInstanceCount && currentToAdd != CREGEX_MATCH_FAIL; i++) {
 		cursor = parent -> child;
 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) && internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy)) {
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
@@ -829,19 +834,21 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 		result = CREGEX_MATCH_FAIL;
 	}
 	goto end;
-	lazyLoop:
-	for (i=0; i<parent -> maxInstanceCount && i < strlen(strStart) + 1; i++) { // May need to change this later.
-		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) && internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy)) {
-			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
-			cursor = cursor -> next;
+	lazyLoop: {
+		size_t len = strlen(strStart);
+		for (i=0; i<parent -> maxInstanceCount && i <= len; i++) { // May need to change this later.
+			while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) && internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy)) {
+				if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
+				cursor = cursor -> next;
+			}
+			if (currentToAdd != CREGEX_MATCH_FAIL) {
+				break;
+			}
+			cursor = parent -> child;
 		}
-		cursor = parent -> child;
-		if (currentToAdd != CREGEX_MATCH_FAIL) {
-			break;
+		if (currentToAdd == CREGEX_MATCH_FAIL) {
+			result = CREGEX_MATCH_FAIL;
 		}
-	}
-	if (currentToAdd == CREGEX_MATCH_FAIL) {
-		result = CREGEX_MATCH_FAIL;
 	}
 	end:
 	if (result != CREGEX_MATCH_FAIL) {
