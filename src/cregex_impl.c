@@ -777,9 +777,10 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_char_class(const RegexPattern *clas
 CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *parent, const char * const strStart, char **str) {// NOLINT
 	if (!parent) return CREGEX_MATCH_FAIL;
 	size_t result = 0;
-	size_t currentToAdd = 0;
+	size_t currentToAdd = CREGEX_MATCH_FAIL;
 	size_t i=0;
 	char *strCopy = *str;
+	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
 	for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
 		int longestChanged = 0;
 		size_t longestAlternation = CREGEX_MATCH_FAIL;
@@ -805,13 +806,54 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 			break;
 		}
 	}
+	goto end;
+	lazyLoop: {}
+	return 0; // Not implemented yet
+	// printf("Entering lazy loop at %.3s\n", *str);
+	// size_t j=0;
+	// for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
+	// 	printf("\tIncrement at [%zu]\n", i);
+	// 	int shortestChanged = 0;
+	// 	size_t shortestAlternation = CREGEX_MATCH_FAIL;
+	// 	for (; j < parent -> alternationCount; j++) {
+	// 		printf("\t\tAlternation at [%zu]\n", j);
+	// 		RegexPattern* cursor = parent->alternations[j];
+	// 		size_t currentAlternation = 0;
+	// 		strCopy = *str + result;
+	// 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+	// 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentAlternation += currentToAdd;
+	// 			cursor = cursor -> next;
+	// 		}
+	// 		if (!cursor && currentToAdd != CREGEX_MATCH_FAIL) {
+	// 			printf("\t\t\tSuccessful match at [%zu]\n", j);
+	// 			shortestChanged = 1;
+	// 			shortestAlternation = currentAlternation;
+	// 			break;
+	// 		} else {
+	// 			printf("\t\t\tFailed at alternation [%zu]\n", j);
+	// 		}
+	// 	}
+	// 	if (internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) == CREGEX_MATCH_FAIL || i < parent -> minInstanceCount) {
+	// 		if (j == parent -> alternationCount) break;
+	// 		i--;
+	// 		j++;
+	// 		continue;
+	// 	}
+	// 	if (shortestChanged) {
+	// 		result += shortestAlternation;
+	// 		j=0;
+	// 	} else {
+	// 		break;
+	// 	}
+	// }
+	end:
 	if (i+1 < parent->minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
-	strCopy = *str + result;
 	if (result != CREGEX_MATCH_FAIL) {
 		*str += result;
 	}
+	printf("Returning %zu\n", result);
 	return result;
 }
 
