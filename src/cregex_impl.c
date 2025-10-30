@@ -781,7 +781,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 	size_t i=0;
 	char *strCopy = *str;
 	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
-	for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
+	for (i=0; i<parent -> maxInstanceCount; i++) {
 		int longestChanged = 0;
 		size_t longestAlternation = CREGEX_MATCH_FAIL;
 		for (size_t j=0; j < parent -> alternationCount; j++) {
@@ -808,52 +808,35 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 	}
 	goto end;
 	lazyLoop: {}
-	return 0; // Not implemented yet
-	// printf("Entering lazy loop at %.3s\n", *str);
-	// size_t j=0;
-	// for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
-	// 	printf("\tIncrement at [%zu]\n", i);
-	// 	int shortestChanged = 0;
-	// 	size_t shortestAlternation = CREGEX_MATCH_FAIL;
-	// 	for (; j < parent -> alternationCount; j++) {
-	// 		printf("\t\tAlternation at [%zu]\n", j);
-	// 		RegexPattern* cursor = parent->alternations[j];
-	// 		size_t currentAlternation = 0;
-	// 		strCopy = *str + result;
-	// 		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
-	// 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentAlternation += currentToAdd;
-	// 			cursor = cursor -> next;
-	// 		}
-	// 		if (!cursor && currentToAdd != CREGEX_MATCH_FAIL) {
-	// 			printf("\t\t\tSuccessful match at [%zu]\n", j);
-	// 			shortestChanged = 1;
-	// 			shortestAlternation = currentAlternation;
-	// 			break;
-	// 		} else {
-	// 			printf("\t\t\tFailed at alternation [%zu]\n", j);
-	// 		}
-	// 	}
-	// 	if (internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) == CREGEX_MATCH_FAIL || i < parent -> minInstanceCount) {
-	// 		if (j == parent -> alternationCount) break;
-	// 		i--;
-	// 		j++;
-	// 		continue;
-	// 	}
-	// 	if (shortestChanged) {
-	// 		result += shortestAlternation;
-	// 		j=0;
-	// 	} else {
-	// 		break;
-	// 	}
-	// }
+	for (i=0; i<parent -> maxInstanceCount; i++) { // to do: add lazy alternations
+		int shortestChanged = 0;
+		size_t shortestAlternation = CREGEX_MATCH_FAIL;
+		for (size_t j=0; j < parent -> alternationCount; j++) {
+			RegexPattern* cursor = parent->alternations[j];
+			size_t currentAlternation = 0;
+			strCopy = *str + result;
+			while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
+				if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentAlternation += currentToAdd;
+				cursor = cursor -> next;
+			}
+			if (!cursor && currentToAdd != CREGEX_MATCH_FAIL &&  (!parent -> next || internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) != CREGEX_MATCH_FAIL) && currentAlternation < shortestAlternation) {
+				shortestChanged = 1;
+				shortestAlternation = currentAlternation;
+			}
+		}
+		if (shortestChanged) {
+			result += shortestAlternation;
+		} else {
+			break;
+		}
+	}
 	end:
-	if (i+1 < parent->minInstanceCount) {
+	if (i < parent->minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	if (result != CREGEX_MATCH_FAIL) {
 		*str += result;
 	}
-	printf("Returning %zu\n", result);
 	return result;
 }
 
@@ -872,7 +855,9 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 			cursor = cursor -> next;
 		}
 	}
-	if ((cursor && cursor->next) || i < parent->minInstanceCount) {
+	if (parent -> minInstanceCount == 0 && currentToAdd == CREGEX_MATCH_FAIL) {
+		result = 0;
+	} else if ((cursor && cursor->next) || i < parent->minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	goto end;
@@ -970,7 +955,8 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 		return internal_cregex_match_alternation(compiledPattern, strStart, str);
 	}
 	if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_CAPTURE_GROUP | CREGEX_PATTERN_DUMMY_CAPTURE_GROUP)) {
-		return internal_cregex_match_capture_group(compiledPattern, strStart, str);
+		size_t ret = internal_cregex_match_capture_group(compiledPattern, strStart, str);
+		return ret;
 	}
 	if (internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
 	for (;max >= min && max - 1 < max; max--) { // Default greedy loop
@@ -985,7 +971,10 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 				lookThrough = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
-				if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += max;
+				char *zeroLengthTest = *str;
+				if (min == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
+					max = 0;
+				} else if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += max;
 				return max;
 			}
 		}
@@ -1010,7 +999,8 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 		}
 	}
-	end: return CREGEX_MATCH_FAIL;
+	end:
+	return CREGEX_MATCH_FAIL;
 }
 
 CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char * const strStart, char *str) {

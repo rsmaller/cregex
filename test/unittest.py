@@ -16,10 +16,10 @@ testCases = [
 	#
 	# r"(?:\w)+?",
 	# r"(?:\w)+",
-
-	r"(\w|-)+?n",
+	#
+	# r"(\w|-)+?n",
 	# r"(\w|-)+?",
-
+	#
 	# r"(\w|-)+n",
 	# r"(\w|-)+",
 	#
@@ -43,7 +43,14 @@ testCases = [
 	# r"(?=abc)a",
 	# r"a(?<=abc)",
 	# r"\b\w{3}", r"\w{3}\b",	r"\b\w{3}\b", r"(\w{3}$)", r"(\w{3})$", r"(^\w{3})", r"^(\w{3})",
-	# r"\w(?=$)",	r"(?<=^)\w", r"[Rr]eg(?:ular)? ?[Ee]x(?:p|pr|pression)?",
+	# r"\w(?=$)",	r"(?<=^)\w",
+	r"[Rr]eg ?[Ee]x(?:p)?",
+	r"[Rr]eg(?:ular)?[Ee]x(?:p)?",
+	r"[Rr]eg(?:ular)? ?[Ee]x(?:p)?",
+	r"[Rr]eg(?:ular)? ?[Ee]x(?:pr)?",
+	# r"[Rr]eg(?:ular)? ?[Ee]x(?:pression)?",
+	# r"[Rr]eg(?:ular)?[Ee]x(?:p|pr|pression)?",
+	# r"[Rr]eg(?:ular)? ?[Ee]x(?:p|pr|pression)?",
 	# r"\b[Rr]eg(?:ular)? ?[Ee]x(?:p|pr|pression)?\b",
 	# r"(?:\w{3}|\d{3})", r"(?:\w{3}){2}", r"\d(?=[a-z]|2)",
 	# r"\.(?=\d{3})", r"(\d| )?\w", r"(\d)?\w", r"(\d)*", r"(\d){1,3}", r"(?<=path)\w*", r"^\w{2}",

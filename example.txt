@@ -1,1 +1,28 @@
 regularexpression
+regexp
+regularex
+RegEx
+
+regexpression
+regexpr
+reg exp
+Regular Expression
+Hopefully this works because regex is very difficult. Here are some test values:
+
+jane.doe.@gmail.com.
+
+john@users.cs.umb.edu
+
+john.doe@gmail.com
+
+8f
+
+82
+
+190.168.1.1
+
+fe.ff.12.a6.c2.1b
+
+555-213-8004
+
+Word that begins with path: pathological
