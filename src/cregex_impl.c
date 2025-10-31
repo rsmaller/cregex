@@ -31,9 +31,8 @@ CREGEX_IMPL_FUNC CREGEX_INLINE RegexFlag internal_cregex_get_non_escaped_char_ty
 		case '(':
 		case ')':
 			return CREGEX_PATTERN_METACHARACTER;
+
 		case '$':
-		case 'Z':
-		case 'A':
 		case '^':
 			return CREGEX_PATTERN_METACHARACTER | CREGEX_PATTERN_NON_CONSUMING_CHARACTER;
 		case '{':
@@ -514,7 +513,7 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 	} else if (internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER) && internal_cregex_has_flag(&state, CREGEX_STATE_ESCAPED_CHAR)) {
 		internal_cregex_clear_flag(&charType, CREGEX_PATTERN_METACHARACTER);
 	}
-	if ((**str == 'B' || **str == 'b') && internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
+	if ((**str == 'B' || **str == 'b' || **str == 'A' || **str == 'Z') && internal_cregex_has_flag(&charType, CREGEX_PATTERN_METACHARACTER)) {
 		internal_cregex_set_flag(&charType, CREGEX_PATTERN_NON_CONSUMING_CHARACTER);
 	}
 	ret.flags = charType;
@@ -841,16 +840,20 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 	size_t currentToAdd = 0;
 	size_t i=0;
 	if (internal_cregex_has_flag(&parent -> flags, CREGEX_PATTERN_LAZY_MATCH)) goto lazyLoop;
-	for (i=0; i<parent -> maxInstanceCount && currentToAdd != CREGEX_MATCH_FAIL; i++) {
-		cursor = parent -> child;
-		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL) && internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy)) {
+	for (i=0; i<parent -> maxInstanceCount; i++) {
+		while (cursor && ((currentToAdd = internal_cregex_match_pattern_char(cursor, strStart, &strCopy)) != CREGEX_MATCH_FAIL)) {
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) result += currentToAdd;
 			cursor = cursor -> next;
 		}
+		cursor = parent -> child;
+		strCopy = *str + result;
+		if (parent -> next && internal_cregex_has_flag(&parent -> next -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER
+			| CREGEX_PATTERN_LOOKAHEAD	)) strCopy--;
+		if (currentToAdd == CREGEX_MATCH_FAIL || (i >= parent -> minInstanceCount && parent -> next && internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) != CREGEX_MATCH_FAIL)) {
+			break;
+		}
 	}
-	if (parent -> minInstanceCount == 0 && currentToAdd == CREGEX_MATCH_FAIL) {
-		result = 0;
-	} else if ((cursor && cursor->next) || i < parent->minInstanceCount) {
+	if (i < parent -> minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
 	goto end;
@@ -865,6 +868,9 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_capture_group(const RegexPattern *
 			if (!internal_cregex_has_flag(&cursor -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) currentMatchTest += currentToAdd;
 			cursor = cursor -> next;
 		}
+		strCopy = *str + result;
+		if (currentToAdd != CREGEX_MATCH_FAIL) strCopy += currentToAdd;
+		if (parent -> next && internal_cregex_has_flag(&parent -> next -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) strCopy--;
 		if (!cursor && currentToAdd != CREGEX_MATCH_FAIL &&  (!parent -> next || internal_cregex_match_pattern_char(parent -> next, strStart, &strCopy) != CREGEX_MATCH_FAIL)) {
 			foundValidMatch = 1;
 			matchingLength = currentMatchTest;
@@ -973,10 +979,6 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 		}
 	}
-	char *zeroLengthTest = *str;
-	if (min == 0 && max == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
-		return 0;
-	}
 	goto end;
 	lazyLoop: for (;min <= max && min + 1 > min; min++) { // Implement lazy matching logic here
 		char *postincrement = *str + min;
@@ -993,7 +995,12 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 		}
 	}
-	end: return CREGEX_MATCH_FAIL;
+	end:
+	char *zeroLengthTest = *str;
+	if (min == 0 && max == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
+		return 0;
+	}
+	return CREGEX_MATCH_FAIL;
 }
 
 CREGEX_IMPL_FUNC RegexMatch internal_cregex_first_match(const RegexPattern *compiledPattern, const char * const strStart, char *str) {
