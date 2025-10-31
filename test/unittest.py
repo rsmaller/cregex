@@ -44,6 +44,8 @@ testCases = [
 	# r"a(?<=abc)",
 	# r"\b\w{3}", r"\w{3}\b",	r"\b\w{3}\b", r"(\w{3}$)", r"(\w{3})$", r"(^\w{3})", r"^(\w{3})",
 	# r"\w(?=$)",	r"(?<=^)\w",
+	r"r? ?",
+	r"(?:ular)? ?",
 	r"[Rr]eg ?[Ee]x(?:p)?",
 	r"[Rr]eg(?:ular)?[Ee]x(?:p)?",
 	r"[Rr]eg(?:ular)? ?[Ee]x(?:p)?",

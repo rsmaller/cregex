@@ -752,7 +752,7 @@ CREGEX_IMPL_FUNC int internal_cregex_compare_single_char(const RegexPattern *pat
 CREGEX_IMPL_FUNC int internal_cregex_compare_char_length(const RegexPattern *patternChar, const char *matchAgainst, const size_t count, const char * const strStart, char **str) {
 	int ret = 1;
 	if (count == 0) {
-		return ret;
+		return 0;
 	}
 	for (size_t i=0; i<count; i++) {
 		ret = ret && internal_cregex_compare_single_char(patternChar, matchAgainst[i], strStart, str);
@@ -948,8 +948,8 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 	}
 	size_t min = compiledPattern -> minInstanceCount;
 	size_t max = compiledPattern -> maxInstanceCount;
-	if (max > strlen(*str) + 1) {
-		max = strlen(*str) + 1;
+	if (max > strlen(*str)) {
+		max = strlen(*str);
 	}
 	if (internal_cregex_has_flag(&compiledPattern->flags, CREGEX_PATTERN_ALTERNATION_GROUP)) {
 		return internal_cregex_match_alternation(compiledPattern, strStart, str);
@@ -971,17 +971,15 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 				lookThrough = internal_cregex_match_lookbehind(compiledPattern -> prev, strStart, *str);
 			}
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
-				char *zeroLengthTest = *str;
-				if (min == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
-					max = 0;
-				} else if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += max;
+				if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += max;
 				return max;
 			}
+		} else if (min == 0 && max == 0) {
+			if (!compiledPattern -> next || (compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
+				*str = postincrement;
+				return 0;
+			}
 		}
-	}
-	char *zeroLengthTest = *str;
-	if (min == 0 && max == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
-		return 0;
 	}
 	goto end;
 	lazyLoop: for (;min <= max && min + 1 > min; min++) { // Implement lazy matching logic here
@@ -996,6 +994,11 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			if (lookThrough != CREGEX_MATCH_FAIL && (!compiledPattern->next || internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
 				if (!internal_cregex_has_flag(&compiledPattern -> flags, CREGEX_PATTERN_NON_CONSUMING_CHARACTER)) *str += min;
 				return min;
+			}
+		}  else if (min == 0 && max == 0) {
+			if (!compiledPattern -> next || (compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &postincrement) != CREGEX_MATCH_FAIL)) {
+				*str = postincrement;
+				return 0;
 			}
 		}
 	}
