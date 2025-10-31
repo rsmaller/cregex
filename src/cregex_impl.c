@@ -91,21 +91,20 @@ CREGEX_IMPL_FUNC CREGEX_INLINE void internal_cregex_compile_end_anchor(RegexPatt
 	patternToAdd -> primaryChar = '$';
 }
 
-
-// CREGEX_IMPL_FUNC CREGEX_NORETURN void internal_cregex_error(const char * const format, ...) {
-// 	va_list args;
-// 	va_start(args, format);
-// 	char *msgStart = "CRegex Compile Error: ";
-// 	char *msgEnd = "\n";
-// 	char *errorBuf = (char *)calloc(strlen(msgStart) + strlen(format) + strlen(msgEnd) + 1, sizeof(char));
-// 	memcpy(errorBuf, msgStart, strlen(msgStart) + 1);
-// 	memcpy(errorBuf + strlen(errorBuf), format, strlen(format) + 1);
-// 	memcpy(errorBuf + strlen(errorBuf), msgEnd, strlen(msgEnd) + 1); // To shut up the compiler
-// 	vfprintf(stderr, errorBuf, args);
-// 	free(errorBuf);
-// 	va_end(args);
-// 	exit(CREGEX_COMPILE_FAILURE);
-// }
+CREGEX_IMPL_FUNC CREGEX_UNUSED CREGEX_NORETURN void internal_cregex_error(const char * const format, ...) {
+	va_list args;
+	va_start(args, format);
+	char *msgStart = "CRegex Compile Error: ";
+	char *msgEnd = "\n";
+	char *errorBuf = (char *)calloc(strlen(msgStart) + strlen(format) + strlen(msgEnd) + 1, sizeof(char));
+	memcpy(errorBuf, msgStart, strlen(msgStart) + 1);
+	memcpy(errorBuf + strlen(errorBuf), format, strlen(format) + 1);
+	memcpy(errorBuf + strlen(errorBuf), msgEnd, strlen(msgEnd) + 1); // To shut up the compiler
+	vfprintf(stderr, errorBuf, args);
+	free(errorBuf);
+	va_end(args);
+	exit(CREGEX_COMPILE_FAILURE);
+}
 
 CREGEX_IMPL_FUNC void internal_cregex_output(const char * const format, ...) {
 	va_list args;
