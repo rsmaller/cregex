@@ -549,7 +549,13 @@ CREGEX_IMPL_FUNC RegexPattern internal_cregex_fetch_current_char_incr(const char
 
 RegexPattern *cregex_compile_pattern(const char *pattern) {
 	RegexPattern *ret = (RegexPattern *)calloc(1, sizeof(RegexPattern));
-	if (!pattern || !*pattern || !ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
+	if (!pattern || !*pattern) {
+		free(ret);
+		return NULL;
+	}
 	RegexPattern *cursor = ret;
 	*ret = internal_cregex_fetch_current_char_incr(&pattern);
 	if (internal_cregex_has_flag(&ret -> flags, CREGEX_PATTERN_LOOKAHEAD | CREGEX_PATTERN_ERROR)) {
@@ -822,7 +828,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_alternation(const RegexPattern *pa
 			break;
 		}
 	}
-	end:
+	end: {}
 	if (i < parent->minInstanceCount) {
 		result = CREGEX_MATCH_FAIL;
 	}
@@ -995,7 +1001,7 @@ CREGEX_IMPL_FUNC size_t internal_cregex_match_pattern_char(const RegexPattern *c
 			}
 		}
 	}
-	end:
+	end: {}
 	char *zeroLengthTest = *str;
 	if (min == 0 && max == 0 && compiledPattern -> next && internal_cregex_match_pattern_char(compiledPattern->next, strStart, &zeroLengthTest) != CREGEX_MATCH_FAIL) {
 		return 0;

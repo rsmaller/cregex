@@ -80,7 +80,7 @@ CREGEX_EXPORT RegexMatch          cregex_first_match_heap  (const RegexPattern *
 CREGEX_EXPORT RegexMatch          cregex_longest_match_heap(const RegexPattern *compiledPattern, char *str);
 CREGEX_EXPORT RegexMatchContainer cregex_multi_match_heap  (const RegexPattern *compiledPattern, char *str, RegexFlag flags);
 
-CREGEX_EXPORT char               *cregex_allocate_match           (RegexMatch container);
+CREGEX_EXPORT char *              cregex_allocate_match           (RegexMatch container);
 CREGEX_EXPORT RegexMatch          cregex_heap_copy_match          (RegexMatch container);
 CREGEX_EXPORT RegexMatchContainer cregex_heap_copy_match_container(RegexMatchContainer container);
 
