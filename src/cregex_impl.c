@@ -1187,7 +1187,6 @@ CREGEX_EXPORT void cregex_print_match_with_groups(const RegexMatch match) {
 			internal_cregex_output("\"");
 		}
 	}
-
 	internal_cregex_output("\n");
 }
 
